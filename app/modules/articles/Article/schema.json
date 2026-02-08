@@ -77,7 +77,7 @@
     "updated_at": {
       "type": "timestamp",
       "nullable": true,
-      "default": "NULL ON UPDATE CURRENT_TIMESTAMP",
+      "onUpdateCurrentTimestamp": true,
       "view": "hidden",
       "controller": "auto",
       "comment": "Last update timestamp"

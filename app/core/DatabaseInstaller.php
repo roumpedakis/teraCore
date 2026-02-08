@@ -125,6 +125,15 @@ class DatabaseInstaller
                 }
             }
 
+            // Handle ON UPDATE CURRENT_TIMESTAMP for timestamps
+            if ($field['onUpdateCurrentTimestamp'] ?? false) {
+                // If no default was set, set it to null first
+                if (!isset($field['default'])) {
+                    $columnDef .= ' DEFAULT NULL';
+                }
+                $columnDef .= ' ON UPDATE CURRENT_TIMESTAMP';
+            }
+
             if ($field['unique'] ?? false) {
                 $columnDef .= ' UNIQUE';
             }

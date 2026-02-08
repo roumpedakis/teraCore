@@ -1,11 +1,14 @@
 #!/usr/bin/env php
 <?php
 
+// Load test bootstrap
+require_once __DIR__ . '/tests/bootstrap.php';
+
 echo "╔═══════════════════════════════════════\n";
 echo "║   teraCore Unit Test Runner\n";
 echo "╚═══════════════════════════════════════\n\n";
 
-$testDir = __DIR__ . '/unit';
+$testDir = __DIR__ . '/tests/unit';
 $files = glob("$testDir/*.php");
 
 if (empty($files)) {

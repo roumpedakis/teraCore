@@ -1,7 +1,6 @@
 <?php
 
 use App\Core\Libraries\Encrypt;
-use Tests\TestCase;
 
 class EncryptTest extends TestCase {
     
@@ -45,7 +44,8 @@ class EncryptTest extends TestCase {
         $token2 = Encrypt::generateToken();
         
         assert_not_equal($token1, $token2);
-        assert_equal(strlen($token1), 64); // 32 bytes = 64 hex chars
+        // Default length is 32, which generates 16 random bytes = 32 hex chars
+        assert_equal(32, strlen($token1));
     }
 
     public function test_encrypt_decryption_with_special_chars() {
@@ -57,6 +57,6 @@ class EncryptTest extends TestCase {
     }
 }
 
-require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/../bootstrap.php';
 $test = new EncryptTest();
 $test->run();

@@ -1,7 +1,6 @@
 <?php
 
 use App\Core\Libraries\Parser;
-use Tests\TestCase;
 
 class ParserTest extends TestCase {
     
@@ -99,6 +98,6 @@ class ParserTest extends TestCase {
     }
 }
 
-require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/../bootstrap.php';
 $test = new ParserTest();
 $test->run();

@@ -1,6 +1,6 @@
 <?php
 
-// Load autoloader
+// Load autoloader first
 require_once __DIR__ . '/../app/Autoloader.php';
 
 // Initialize configuration
@@ -47,6 +47,13 @@ function assert_array_key_exists($key, $array, $message = '') {
     }
 }
 
+// Utility function
+function class_basename($class) {
+    $class = is_object($class) ? get_class($class) : $class;
+    return basename(str_replace('\\', '/', $class));
+}
+
+// Base TestCase class
 class TestCase {
     protected $testName = '';
     protected $testsPassed = 0;
@@ -69,10 +76,14 @@ class TestCase {
         echo "\n=== Running " . class_basename($this) . " ===\n";
 
         foreach (get_class_methods($this) as $method) {
-            if (str_starts_with($method, 'test')) {
-                $testName = str_replace('test_', '', $method);
-                $testName = str_replace('_', ' ', $testName);
-                $this->test(ucwords($testName), fn() => $this->$method());
+            if (str_starts_with($method, 'test_') || str_starts_with($method, 'test')) {
+                // Skip the TestCase base methods by checking if it's in this class only
+                $reflector = new \ReflectionMethod($this, $method);
+                if ($reflector->class === static::class) {
+                    $testName = str_replace('test_', '', $method);
+                    $testName = str_replace('_', ' ', $testName);
+                    $this->test(ucwords($testName), fn() => $this->$method());
+                }
             }
         }
 
@@ -85,9 +96,4 @@ class TestCase {
         echo "Results: {$this->testsPassed}/{$total} passed\n";
         return $this->testsFailed === 0;
     }
-}
-
-function class_basename($class) {
-    $class = is_object($class) ? get_class($class) : $class;
-    return basename(str_replace('\\', '/', $class));
 }
