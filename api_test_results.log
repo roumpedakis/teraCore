@@ -1,0 +1,28 @@
+╔═══════════════════════════════════════
+║   TeraCore API Integration Tests
+╚═══════════════════════════════════════
+
+✓ Server is running at http://localhost:8000
+
+────────────────────────────────────────
+RUNNING API INTEGRATION TESTS
+────────────────────────────────────────
+
+✓ TEST: User Registration
+  User ID: 11
+
+✓ TEST: User Login
+  Access Token: eyJhbGciOiJIUzI1NiIs...
+  Expires In: 3600 seconds
+
+✓ TEST: Verify Token
+  User ID from token: 7
+  Token expires at: 2026-02-08 16:17:39
+
+✓ TEST: Refresh Token
+  DEBUG: Response = []
+
+❌ TEST FAILED
+Error: Assertion failed: Token refresh should succeed
+File: D:\MrSRK\testai\tests\integration\ApiTest.php
+Line: 377
