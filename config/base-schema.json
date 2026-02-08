@@ -1,0 +1,124 @@
+{
+  "$version": "1.0.0",
+  "$description": "Common fields inherited by all entities. These fields are automatically added to every entity schema unless explicitly excluded.",
+  
+  "fields": {
+    "id": {
+      "type": "number",
+      "sql_type": "INT AUTO_INCREMENT PRIMARY KEY",
+      "required": true,
+      "auto_generated": true,
+      "description": "Primary key (auto-increment)",
+      "ui_hidden": true
+    },
+    
+    "reference_id": {
+      "type": "text",
+      "sql_type": "VARCHAR(36)",
+      "required": false,
+      "unique": true,
+      "description": "UUID for external references",
+      "default": null,
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    
+    "uid": {
+      "type": "text",
+      "sql_type": "VARCHAR(100)",
+      "required": false,
+      "unique": true,
+      "description": "Unique identifier string (alternative to id for public URLs)",
+      "default": null
+    },
+    
+    "created_at": {
+      "type": "datetime",
+      "sql_type": "DATETIME DEFAULT CURRENT_TIMESTAMP",
+      "required": false,
+      "auto_generated": true,
+      "description": "Creation timestamp",
+      "ui_readonly": true
+    },
+    
+    "updated_at": {
+      "type": "datetime",
+      "sql_type": "DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
+      "required": false,
+      "auto_generated": true,
+      "description": "Last update timestamp",
+      "ui_readonly": true
+    },
+    
+    "created_by": {
+      "type": "number",
+      "sql_type": "INT",
+      "required": false,
+      "description": "User ID who created this record",
+      "foreign_key": {
+        "table": "users",
+        "column": "id",
+        "on_delete": "SET NULL"
+      },
+      "default": null
+    },
+    
+    "updated_by": {
+      "type": "number",
+      "sql_type": "INT",
+      "required": false,
+      "description": "User ID who last updated this record",
+      "foreign_key": {
+        "table": "users",
+        "column": "id",
+        "on_delete": "SET NULL"
+      },
+      "default": null
+    },
+    
+    "is_active": {
+      "type": "checkbox",
+      "sql_type": "TINYINT(1) DEFAULT 1",
+      "required": false,
+      "description": "Active status (for soft delete)",
+      "default": 1
+    },
+    
+    "is_deleted": {
+      "type": "checkbox",
+      "sql_type": "TINYINT(1) DEFAULT 0",
+      "required": false,
+      "description": "Deleted flag (for soft delete)",
+      "default": 0
+    }
+  },
+  
+  "indexes": {
+    "idx_reference_id": {
+      "columns": ["reference_id"],
+      "unique": true
+    },
+    "idx_uid": {
+      "columns": ["uid"],
+      "unique": true
+    },
+    "idx_created_at": {
+      "columns": ["created_at"]
+    },
+    "idx_is_active": {
+      "columns": ["is_active"]
+    },
+    "idx_is_deleted": {
+      "columns": ["is_deleted"]
+    }
+  },
+  
+  "exclude_entities": [],
+  
+  "notes": {
+    "reference_id": "Use UUIDs for public API references to avoid exposing internal IDs",
+    "uid": "Use for SEO-friendly URLs (e.g., articles/my-article-title instead of articles/123)",
+    "soft_delete": "Use is_deleted for soft delete. is_active for active/inactive status",
+    "created_by": "Automatically set from authenticated user in BaseController",
+    "updated_by": "Automatically set from authenticated user in BaseController on updates"
+  }
+}

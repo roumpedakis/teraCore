@@ -3,6 +3,7 @@
 namespace App\Modules\Core\Admin;
 
 use App\Core\Classes\BaseRepository;
+use App\Modules\Core\Admin\Model;
 
 /**
  * Admin Repository
@@ -11,6 +12,7 @@ use App\Core\Classes\BaseRepository;
 class Repository extends BaseRepository
 {
     protected string $table = 'admins';
+    protected ?string $modelClass = Model::class;
 
     /**
      * Find admin by name

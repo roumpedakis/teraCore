@@ -19,10 +19,10 @@ class AuthController
     private UserRepository $userRepo;
     private Database $db;
 
-    public function __construct(Database $db = null)
+    public function __construct(?Database $db = null, ?UserRepository $userRepo = null)
     {
         $this->db = $db ?? Database::getInstance();
-        $this->userRepo = new UserRepository($this->db);
+        $this->userRepo = $userRepo ?? new UserRepository($this->db);
     }
 
     /**
@@ -176,7 +176,7 @@ class AuthController
         // Get user to verify token matches DB
         $userId = JWT::getUserIdFromToken($data['refresh_token']);
         if ($userId) {
-            $user = $this->userRepo->find($userId);
+            $user = $this->userRepo->findById($userId);
             if ($user && $user['refresh_token'] === $data['refresh_token']) {
                 // Token matches DB, update expiry time
                 $expiresAt = $refreshResult['expires_at'];

@@ -3,10 +3,12 @@
 namespace App\Modules\Articles\Article;
 
 use App\Core\Classes\BaseRepository;
+use App\Modules\Articles\Article\Model;
 
 class Repository extends BaseRepository
 {
     protected string $table = 'articles';
+    protected ?string $modelClass = Model::class;
 
     /**
      * Find article by slug

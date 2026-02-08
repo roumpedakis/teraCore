@@ -8,6 +8,7 @@ abstract class BaseRepository
 {
     protected string $table = '';
     protected Database $db;
+    protected ?string $modelClass = null;
     protected array $wheres = [];
     protected array $orderBy = [];
     protected int $limit = 0;
@@ -154,6 +155,155 @@ abstract class BaseRepository
     }
 
     /**
+     * Set model class for hydration
+     */
+    public function setModelClass(string $modelClass): void
+    {
+        $this->modelClass = $modelClass;
+    }
+
+    /**
+     * Get model class for hydration
+     */
+    public function getModelClass(): ?string
+    {
+        return $this->modelClass;
+    }
+
+    /**
+     * Apply filters from query parameters
+     * Supports: limit, offset, orderBy, order, and dynamic field filters
+     */
+    public function applyFilters(array $params): self
+    {
+        // Handle pagination
+        if (isset($params['limit'])) {
+            $limit = (int)$params['limit'];
+            $offset = (int)($params['offset'] ?? 0);
+            $this->limit($limit, $offset);
+        }
+
+        // Handle sorting
+        if (isset($params['orderBy'])) {
+            $direction = strtoupper($params['order'] ?? 'ASC');
+            if (!in_array($direction, ['ASC', 'DESC'])) {
+                $direction = 'ASC';
+            }
+            $this->orderBy($params['orderBy'], $direction);
+        }
+
+        // Handle dynamic field filters (e.g., name=takis, status=active)
+        $reservedParams = ['limit', 'offset', 'orderBy', 'order'];
+        foreach ($params as $key => $value) {
+            if (!in_array($key, $reservedParams) && !empty($value)) {
+                $this->where($key, '=', $value);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Get paginated results with metadata
+     */
+    public function getPaginated(array $params = []): array
+    {
+        // Apply filters
+        $this->applyFilters($params);
+
+        // Get total count (before pagination)
+        $total = $this->count();
+
+        // Get paginated data
+        $data = $this->get();
+
+        return [
+            'data' => $data,
+            'pagination' => [
+                'total' => $total,
+                'limit' => $this->limit > 0 ? $this->limit : $total,
+                'offset' => $this->offset,
+                'count' => count($data)
+            ]
+        ];
+    }
+
+    /**
+     * Count records matching current where clauses
+     */
+    public function count(): int
+    {
+        $query = "SELECT COUNT(*) as count FROM {$this->getTable()}";
+
+        if (!empty($this->wheres)) {
+            $conditions = [];
+            $params = [];
+            foreach ($this->wheres as $where) {
+                $conditions[] = "{$where['column']} {$where['operator']} ?";
+                $params[] = $where['value'];
+            }
+            $query .= " WHERE " . implode(' AND ', $conditions);
+        }
+
+        $result = $this->db->fetchAll($query, $params ?? []);
+        return (int)($result[0]['count'] ?? 0);
+    }
+
+    /**
+     * Hydrate model from array
+     */
+    protected function hydrateModel(array $data): ?BaseModel
+    {
+        if (empty($this->modelClass) || !class_exists($this->modelClass)) {
+            return null;
+        }
+
+        $model = new $this->modelClass();
+        if ($model instanceof BaseModel) {
+            $model->fill($data);
+            $model->markAsExisting();
+            $model->setRepository($this);
+            return $model;
+        }
+
+        return null;
+    }
+
+    /**
+     * Get first result as model
+     */
+    public function firstModel(): ?BaseModel
+    {
+        $data = $this->first();
+        return $data ? $this->hydrateModel($data) : null;
+    }
+
+    /**
+     * Get results as models
+     */
+    public function getModels(): array
+    {
+        $rows = $this->get();
+        $models = [];
+        foreach ($rows as $row) {
+            $model = $this->hydrateModel($row);
+            if ($model) {
+                $models[] = $model;
+            }
+        }
+        return $models;
+    }
+
+    /**
+     * Find by ID as model
+     */
+    public function findByIdModel(mixed $id): ?BaseModel
+    {
+        $data = $this->findById($id);
+        return $data ? $this->hydrateModel($data) : null;
+    }
+
+    /**
      * Reset query parameters
      */
     private function resetQuery(): void
@@ -168,8 +318,10 @@ abstract class BaseRepository
 /**
  * Helper function
  */
-function class_basename(string|object $class): string
-{
-    $class = is_object($class) ? get_class($class) : $class;
-    return basename(str_replace('\\', '/', $class));
+if (!function_exists(__NAMESPACE__ . '\\class_basename')) {
+    function class_basename(string|object $class): string
+    {
+        $class = is_object($class) ? get_class($class) : $class;
+        return basename(str_replace('\\', '/', $class));
+    }
 }

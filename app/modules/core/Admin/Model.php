@@ -3,6 +3,8 @@
 namespace App\Modules\Core\Admin;
 
 use App\Core\Classes\BaseModel;
+use App\Core\Classes\BaseRepository;
+use App\Core\Database;
 
 /**
  * Admin Model
@@ -12,16 +14,22 @@ class Model extends BaseModel
 {
     protected string $table = 'admins';
 
+    private function repo(): BaseRepository
+    {
+        if ($this->repository instanceof BaseRepository) {
+            return $this->repository;
+        }
+
+        $this->repository = new Repository(Database::getInstance());
+        return $this->repository;
+    }
+
     /**
      * Get admin by name
      */
     public function getByName(string $name): ?self
     {
-        $data = $this->repository->where('name', '=', $name)->first();
-        if ($data) {
-            return $this->fill($data);
-        }
-        return null;
+        return $this->repo()->where('name', '=', $name)->firstModel();
     }
 
     /**
@@ -35,10 +43,10 @@ class Model extends BaseModel
     /**
      * Get all active admins
      */
-    public static function getActive(): array
+    public static function getActive(?BaseRepository $repo = null): array
     {
-        $repo = new Repository();
-        return $repo->where('status', '=', 'active')->get();
+        $repo = $repo ?? new Repository(Database::getInstance());
+        return $repo->where('status', '=', 'active')->getModels();
     }
 
     /**

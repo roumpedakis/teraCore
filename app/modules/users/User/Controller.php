@@ -5,133 +5,70 @@ namespace App\Modules\Users\User;
 use App\Core\Classes\BaseController;
 use App\Core\Libraries\Encrypt;
 use App\Core\Libraries\Sanitizer;
-use App\Core\ResponseFilter;
 
 class Controller extends BaseController
 {
+        /**
+         * Constructor - Enable sensitive data filtering for users
+         */
+        public function __construct()
+        {
+            parent::__construct();
+            $this->useSensitiveDataFilter = true; // Filter passwords, tokens, etc.
+        }
+
     /**
      * Create new user
+        * Override to add password hashing and email validation
      */
     public function create(array $data): array
     {
-        // Sanitize input
-        $username = Sanitizer::sanitizeString($data['username'] ?? '');
-        $email = Sanitizer::sanitizeEmail($data['email'] ?? '');
-        $password = $data['password'] ?? '';
-
-        // Validate
-        if (!Sanitizer::validateEmail($email)) {
-            return ['error' => 'Invalid email'];
+        // Custom validation for users
+        if (empty($data['email']) || !Sanitizer::validateEmail($data['email'])) {
+            return ['success' => false, 'error' => 'Invalid email address'];
         }
-
-        if (!Sanitizer::validateMinLength($password, 6)) {
-            return ['error' => 'Password must be at least 6 characters'];
+        
+        if (empty($data['password']) || !Sanitizer::validateMinLength($data['password'], 6)) {
+            return ['success' => false, 'error' => 'Password must be at least 6 characters'];
         }
-
-        // Hash password
-        $passwordHash = Encrypt::hashPassword($password);
-
-        // Insert
-        $insertData = [
-            'username' => $username,
-            'email' => $email,
-            'password' => $passwordHash,
-            'first_name' => Sanitizer::sanitizeString($data['first_name'] ?? ''),
-            'last_name' => Sanitizer::sanitizeString($data['last_name'] ?? ''),
-            'is_active' => $data['is_active'] ?? 1,
-        ];
-
-        $this->repository->insert($insertData);
-
-        return ['success' => true, 'message' => 'User created successfully'];
-    }
-
-    /**
-     * Read user by ID
-     */
-    public function read(string $id): array
-    {
-        $id = Sanitizer::sanitizeInt($id);
-        $user = $this->repository->findById($id);
-
-        if (!$user) {
-            return ['error' => 'User not found'];
-        }
-
-        // Remove sensitive fields from response (OWASP API3:2023)
-        return ResponseFilter::filterUser($user);
-    }
-
-    /**
-     * Read all users
-     */
-    public function readAll(array $filters = []): array
-    {
-        $users = $this->repository->findAll();
-
-        // Remove sensitive fields from all users (OWASP API3:2023)
-        $filteredUsers = ResponseFilter::filterUsers($users);
-
-        return [
-            'count' => count($filteredUsers),
-            'data' => $filteredUsers
-        ];
+        
+        // Hash password before storage
+        $data['password'] = Encrypt::hashPassword($data['password']);
+        
+        // Normalize email
+        $data['email'] = Sanitizer::sanitizeEmail($data['email']);
+        
+        // Call parent create method (handles sanitization, created_by, etc.)
+        return parent::create($data);
     }
 
     /**
      * Update user
+     * Override to add password hashing if password is being updated
      */
     public function update(string $id, array $data): array
     {
-        $id = Sanitizer::sanitizeInt($id);
-
-        // Check if user exists
-        $user = $this->repository->findById($id);
-        if (!$user) {
-            return ['error' => 'User not found'];
+        // Validate email if provided
+        if (isset($data['email']) && !Sanitizer::validateEmail($data['email'])) {
+            return ['success' => false, 'error' => 'Invalid email address'];
         }
-
-        // Sanitize input
-        $updateData = [];
-        if (isset($data['username'])) {
-            $updateData['username'] = Sanitizer::sanitizeString($data['username']);
+        
+        // Validate password length if provided
+        if (isset($data['password']) && !Sanitizer::validateMinLength($data['password'], 6)) {
+            return ['success' => false, 'error' => 'Password must be at least 6 characters'];
         }
-        if (isset($data['email'])) {
-            $updateData['email'] = Sanitizer::sanitizeEmail($data['email']);
-        }
+        
+        // Hash password if provided
         if (isset($data['password'])) {
-            $updateData['password'] = Encrypt::hashPassword($data['password']);
+            $data['password'] = Encrypt::hashPassword($data['password']);
         }
-        if (isset($data['first_name'])) {
-            $updateData['first_name'] = Sanitizer::sanitizeString($data['first_name']);
+        
+        // Normalize email if provided
+        if (isset($data['email'])) {
+            $data['email'] = Sanitizer::sanitizeEmail($data['email']);
         }
-        if (isset($data['last_name'])) {
-            $updateData['last_name'] = Sanitizer::sanitizeString($data['last_name']);
-        }
-        if (isset($data['is_active'])) {
-            $updateData['is_active'] = $data['is_active'] ? 1 : 0;
-        }
-
-        $this->repository->update($id, $updateData);
-
-        return ['success' => true, 'message' => 'User updated successfully'];
-    }
-
-    /**
-     * Delete user
-     */
-    public function delete(string $id): array
-    {
-        $id = Sanitizer::sanitizeInt($id);
-
-        // Check if user exists
-        $user = $this->repository->findById($id);
-        if (!$user) {
-            return ['error' => 'User not found'];
-        }
-
-        $this->repository->delete($id);
-
-        return ['success' => true, 'message' => 'User deleted successfully'];
+        
+    // Call parent update method (handles sanitization, updated_by, etc.)
+    return parent::update($id, $data);
     }
 }

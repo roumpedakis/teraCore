@@ -25,6 +25,7 @@ class FieldTypeTest extends TestCase
     }
 
     public function test_create_price_field_with_currency() {
+        /** @var Price $field */
         $field = Factory::createFieldType('price');
         assert_true($field instanceof Price);
         assert_equal('price', $field->getType());
@@ -74,6 +75,7 @@ class FieldTypeTest extends TestCase
     }
 
     public function test_price_field_formatting() {
+        /** @var Price $field */
         $field = Factory::createFieldType('price');
         $field->setValue(99.99);
         assert_contains($field->getFormatted(), 'EUR');

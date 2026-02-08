@@ -4,130 +4,44 @@ namespace App\Modules\Core\Admin;
 
 use App\Core\Classes\BaseController;
 
-/**
- * Admin Controller
- * Handles HTTP requests for admin management
- */
 class Controller extends BaseController
 {
-    /**
-     * Create new admin
-     */
     public function create(array $data): array
     {
-        // Validate required fields
         if (empty($data['name'])) {
-            return ['success' => false, 'error' => 'Admin name is required'];
+            return ['error' => 'Admin name is required'];
         }
 
-        // Check if name already exists
         $existing = $this->repository->findByName($data['name']);
         if ($existing) {
-            return ['success' => false, 'error' => 'Admin name already exists'];
+            return ['error' => 'Admin name already exists'];
         }
 
-        // Ensure status is valid
-        $status = $data['status'] ?? 'active';
-        if (!in_array($status, ['active', 'inactive', 'suspended'])) {
-            return ['success' => false, 'error' => 'Invalid status'];
+        if (empty($data['status'])) {
+            $data['status'] = 'active';
         }
 
-        $admin = $this->repository->create([
-            'name' => $data['name'],
-            'description' => $data['description'] ?? null,
-            'status' => $status,
-        ]);
+        $validStatuses = ['active', 'inactive', 'suspended'];
+        if (!in_array($data['status'], $validStatuses)) {
+            return ['error' => 'Invalid status. Must be: active, inactive, or suspended'];
+        }
 
-        return [
-            'success' => true,
-            'message' => 'Admin created successfully',
-            'data' => $admin
-        ];
+        return parent::create($data);
     }
 
-    /**
-     * Read admin by ID
-     */
-    public function read(int $id): array
+    public function update(string $id, array $data): array
     {
-        $admin = $this->repository->find($id);
-        
-        if (!$admin) {
-            return ['success' => false, 'error' => 'Admin not found'];
+        if (isset($data['name']) && empty($data['name'])) {
+            return ['error' => 'Admin name cannot be empty'];
         }
 
-        return [
-            'success' => true,
-            'data' => $admin
-        ];
-    }
-
-    /**
-     * Read all admins
-     */
-    public function readAll(array $filters = []): array
-    {
-        $status = $filters['status'] ?? null;
-
-        if ($status) {
-            $admins = $this->repository->where('status', '=', $status)->get();
-        } else {
-            $admins = $this->repository->orderBy('created_at', 'DESC')->get();
-        }
-
-        return [
-            'success' => true,
-            'count' => count($admins),
-            'data' => $admins
-        ];
-    }
-
-    /**
-     * Update admin
-     */
-    public function update(int $id, array $data): array
-    {
-        $admin = $this->repository->find($id);
-        
-        if (!$admin) {
-            return ['success' => false, 'error' => 'Admin not found'];
-        }
-
-        // Validate status if provided
         if (isset($data['status'])) {
-            if (!in_array($data['status'], ['active', 'inactive', 'suspended'])) {
-                return ['success' => false, 'error' => 'Invalid status'];
+            $validStatuses = ['active', 'inactive', 'suspended'];
+            if (!in_array($data['status'], $validStatuses)) {
+                return ['error' => 'Invalid status. Must be: active, inactive, or suspended'];
             }
         }
 
-        $updated = $this->repository->update($id, $data);
-
-        if ($updated) {
-            return [
-                'success' => true,
-                'message' => 'Admin updated successfully',
-                'data' => $this->repository->find($id)
-            ];
-        }
-
-        return ['success' => false, 'error' => 'Update failed'];
-    }
-
-    /**
-     * Delete admin
-     */
-    public function delete(int $id): array
-    {
-        $admin = $this->repository->find($id);
-        
-        if (!$admin) {
-            return ['success' => false, 'error' => 'Admin not found'];
-        }
-
-        if ($this->repository->delete($id)) {
-            return ['success' => true, 'message' => 'Admin deleted successfully'];
-        }
-
-        return ['success' => false, 'error' => 'Delete failed'];
+        return parent::update($id, $data);
     }
 }

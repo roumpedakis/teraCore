@@ -3,10 +3,12 @@
 namespace App\Modules\Users\User;
 
 use App\Core\Classes\BaseRepository;
+use App\Modules\Users\User\Model;
 
 class Repository extends BaseRepository
 {
     protected string $table = 'users';
+    protected ?string $modelClass = Model::class;
 
     /**
      * Find user by email

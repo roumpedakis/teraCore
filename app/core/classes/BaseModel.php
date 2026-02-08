@@ -11,6 +11,7 @@ abstract class BaseModel
     protected array $attributes = [];
     protected array $original = [];
     protected bool $exists = false;
+    protected ?BaseRepository $repository = null;
     protected ?Translator $translator = null;
     protected array $translatableFields = [];
     protected array $translations = [];
@@ -80,7 +81,7 @@ abstract class BaseModel
     public function save(): bool
     {
         if ($this->exists) {
-            return $this->update();
+            return $this->update($this->getDirty());
         }
         return $this->insert();
     }
@@ -90,16 +91,49 @@ abstract class BaseModel
      */
     protected function insert(): bool
     {
-        // To be implemented by Repository
+        if (!$this->repository) {
+            return false;
+        }
+
+        $result = $this->repository->insert($this->attributes);
+        if ($result > 0) {
+            $this->exists = true;
+            $this->original = $this->attributes;
+            return true;
+        }
+
         return false;
     }
 
     /**
      * Update existing record
      */
-    protected function update(): bool
+    public function update(array $data): bool
     {
-        // To be implemented by Repository
+        if (!$this->repository) {
+            return false;
+        }
+
+        if (!empty($data)) {
+            $this->fill($data);
+        }
+
+        $dirty = $this->getDirty();
+        if (empty($dirty)) {
+            return true;
+        }
+
+        $id = $this->attributes['id'] ?? null;
+        if (!$id) {
+            return false;
+        }
+
+        $result = $this->repository->update($id, $dirty);
+        if ($result > 0) {
+            $this->original = $this->attributes;
+            return true;
+        }
+
         return false;
     }
 
@@ -108,8 +142,44 @@ abstract class BaseModel
      */
     public function delete(): bool
     {
-        // To be implemented by Repository
-        return false;
+        if (!$this->repository) {
+            return false;
+        }
+
+        $id = $this->attributes['id'] ?? null;
+        if (!$id) {
+            return false;
+        }
+
+        $result = $this->repository->delete($id);
+        return $result > 0;
+    }
+
+    /**
+     * Hydrate model from array
+     */
+    public function fill(array $data): static
+    {
+        foreach ($data as $key => $value) {
+            $this->setAttribute($key, $value);
+        }
+        return $this;
+    }
+
+    /**
+     * Set repository
+     */
+    public function setRepository(BaseRepository $repository): void
+    {
+        $this->repository = $repository;
+    }
+
+    /**
+     * Get repository
+     */
+    public function getRepository(): ?BaseRepository
+    {
+        return $this->repository;
     }
 
     /**
@@ -251,8 +321,10 @@ abstract class BaseModel
 /**
  * Helper function
  */
-function class_basename(string|object $class): string
-{
-    $class = is_object($class) ? get_class($class) : $class;
-    return basename(str_replace('\\', '/', $class));
+if (!function_exists(__NAMESPACE__ . '\\class_basename')) {
+    function class_basename(string|object $class): string
+    {
+        $class = is_object($class) ? get_class($class) : $class;
+        return basename(str_replace('\\', '/', $class));
+    }
 }

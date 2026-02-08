@@ -3,123 +3,54 @@
 namespace App\Modules\Articles\Article;
 
 use App\Core\Classes\BaseController;
-use App\Core\Libraries\Sanitizer;
 
 class Controller extends BaseController
 {
-    /**
-     * Create new article
-     */
-    public function create(array $data): array
+    public function create(array $data): array 
     {
-        $title = Sanitizer::sanitizeString($data['title'] ?? '');
-        $content = $data['content'] ?? '';
-        $authorId = Sanitizer::sanitizeInt($data['author_id'] ?? 0);
-
-        if (empty($title) || empty($content) || $authorId === 0) {
-            return ['error' => 'Title, content, and author are required'];
+        // Validate required fields
+        if (empty($data['title']) || empty($data['content'])) {
+            return ['error' => 'Title and content are required'];
         }
 
         // Generate slug
-        $slug = strtolower($title);
+        $slug = strtolower($data['title']);
         $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
         $slug = trim($slug, '-');
+        $data['slug'] = $slug;
 
-        $this->repository->insert([
-            'title' => $title,
-            'slug' => $slug,
-            'content' => $content,
-            'summary' => Sanitizer::sanitizeString($data['summary'] ?? ''),
-            'author_id' => $authorId,
-            'status' => $data['status'] ?? 'draft',
-        ]);
-
-        return ['success' => true, 'message' => 'Article created successfully'];
-    }
-
-    /**
-     * Read article
-     */
-    public function read(string $id): array
-    {
-        $id = Sanitizer::sanitizeInt($id);
-        $article = $this->repository->findById($id);
-
-        if (!$article) {
-            return ['error' => 'Article not found'];
+        // Set default status if not provided
+        if (empty($data['status'])) {
+            $data['status'] = 'draft';
         }
 
-        return $article;
-    }
-
-    /**
-     * Read all articles
-     */
-    public function readAll(array $filters = []): array
-    {
-        $query = $this->repository;
-
-        if (!empty($filters['status'])) {
-            $query = $query->where('status', '=', $filters['status']);
+        // Validate status
+        $validStatuses = ['draft', 'published', 'archived'];
+        if (!in_array($data['status'], $validStatuses)) {
+            return ['error' => 'Invalid status. Must be: draft, published, or archived'];
         }
 
-        if (!empty($filters['author_id'])) {
-            $query = $query->where('author_id', '=', $filters['author_id']);
-        }
-
-        $articles = $query->orderBy('created_at', 'DESC')->get();
-
-        return [
-            'count' => count($articles),
-            'data' => $articles
-        ];
+        return parent::create($data);
     }
 
-    /**
-     * Update article
-     */
     public function update(string $id, array $data): array
     {
-        $id = Sanitizer::sanitizeInt($id);
-
-        $article = $this->repository->findById($id);
-        if (!$article) {
-            return ['error' => 'Article not found'];
-        }
-
-        $updateData = [];
+        // Generate slug if title is being updated
         if (isset($data['title'])) {
-            $updateData['title'] = Sanitizer::sanitizeString($data['title']);
+            $slug = strtolower($data['title']);
+            $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
+            $slug = trim($slug, '-');
+            $data['slug'] = $slug;
         }
-        if (isset($data['content'])) {
-            $updateData['content'] = $data['content'];
-        }
-        if (isset($data['summary'])) {
-            $updateData['summary'] = Sanitizer::sanitizeString($data['summary']);
-        }
+
+        // Validate status if provided
         if (isset($data['status'])) {
-            $updateData['status'] = $data['status'];
+            $validStatuses = ['draft', 'published', 'archived'];
+            if (!in_array($data['status'], $validStatuses)) {
+                return ['error' => 'Invalid status. Must be: draft, published, or archived'];
+            }
         }
 
-        $this->repository->update($id, $updateData);
-
-        return ['success' => true, 'message' => 'Article updated successfully'];
-    }
-
-    /**
-     * Delete article
-     */
-    public function delete(string $id): array
-    {
-        $id = Sanitizer::sanitizeInt($id);
-
-        $article = $this->repository->findById($id);
-        if (!$article) {
-            return ['error' => 'Article not found'];
-        }
-
-        $this->repository->delete($id);
-
-        return ['success' => true, 'message' => 'Article deleted successfully'];
+        return parent::update($id, $data);
     }
 }
