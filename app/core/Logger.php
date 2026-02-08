@@ -67,15 +67,15 @@ class Logger
 
         $timestamp = date('Y-m-d H:i:s');
         $contextStr = !empty($context) ? ' | ' . json_encode($context) : '';
-        $logMessage = "[$timestamp] [$level] $message$contextStr" . PHP_EOL;
+        $logMessage = "[$timestamp] [$level] $message$contextStr";
 
         $logFile = self::$logPath . '/' . date('Y-m-d') . '.log';
 
-        file_put_contents($logFile, $logMessage, FILE_APPEND);
+        file_put_contents($logFile, $logMessage . PHP_EOL, FILE_APPEND);
 
-        // Console output in debug mode
+        // Console output to STDERR in debug mode (doesn't pollute stdout/JSON)
         if (Config::get('APP_DEBUG') === 'true' || Config::get('APP_DEBUG') === true) {
-            echo $logMessage;
+            error_log($logMessage);
         }
     }
 }

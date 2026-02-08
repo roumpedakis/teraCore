@@ -138,13 +138,11 @@ try {
     
     $moduleName = strtolower($segments[0] ?? '');
     $entityName = ucfirst($segments[1] ?? '');
-    $action = $segments[2] ?? 'index';
-    $id = $segments[3] ?? null;
+    $id = $segments[2] ?? null;  // ID is the 3rd segment (after module and entity)
     
     Logger::debug("Path segments parsed", [
         'moduleName' => $moduleName,
         'entityName' => $entityName,
-        'action' => $action,
         'id' => $id
     ]);
     
