@@ -9,6 +9,7 @@ use App\Core\ModuleLoader;
 use App\Core\Factory;
 use App\Core\AuthController;
 use App\Core\AuthMiddleware;
+use App\Core\ApiDocumentation;
 
 // Load autoloader
 require_once __DIR__ . '/../app/Autoloader.php';
@@ -33,7 +34,7 @@ try {
     $request = new Request();
     $response = new Response();
     
-    // Simple routing example (to be expanded)
+    // Route format: /api/module/entity/action or /api/module/entity/:id
     $path = $request->path();
     $method = $request->method();
     
@@ -43,11 +44,27 @@ try {
         'method' => $method
     ]);
     
-    // Route format: /module/entity/action or /module/entity/:id
-    $segments = array_filter(explode('/', $path));
+    // Handle root path - serve HTML documentation
+    if ($path === '/' || $path === '') {
+        header('Content-Type: text/html; charset=utf-8');
+        echo ApiDocumentation::getHtmlDocumentation();
+        exit;
+    }
+    
+    // Handle /api root endpoint - JSON API info
+    if ($path === '/api' || $path === '/api/') {
+        $response->json(ApiDocumentation::getApiInfo());
+        exit;
+    }
+    
+    // Remove /api prefix if present and parse segments
+    $isApiPath = strpos($path, '/api/') === 0 || strpos($path, '/api') === 0;
+    $pathToParse = $isApiPath ? substr($path, 4) : $path; // Remove '/api' prefix
+    
+    $segments = array_filter(explode('/', $pathToParse));
     $segments = array_values($segments); // Re-index after filter
     
-    // Handle auth endpoints (/auth/register, /auth/login, etc.)
+    // Handle auth endpoints (/api/auth/register, /api/auth/login, etc.)
     if (count($segments) >= 1 && strtolower($segments[0]) === 'auth') {
         $authAction = strtolower($segments[1] ?? '');
         $authController = new AuthController(Database::getInstance());
@@ -130,6 +147,46 @@ try {
         'action' => $action,
         'id' => $id
     ]);
+    
+    // ============================================
+    // API ACCESS CONTROL LAYER
+    // ============================================
+    
+    // Admin entity - NO API access at all
+    if (strtolower($moduleName) === 'core' && strtolower($entityName) === 'admin') {
+        $response->status(403)->json([
+            'success' => false,
+            'error' => 'Admin entity is not accessible via API'
+        ]);
+        exit;
+    }
+    
+    // Users entity - Limited endpoints
+    if (strtolower($moduleName) === 'users' && strtolower($entityName) === 'user') {
+        // Only allow: GET (read) and PUT (update own info)
+        // Block: POST (create) and DELETE (delete)
+        $allowed_methods = ['GET'];
+        
+        if ($method === 'POST' || $method === 'DELETE') {
+            $response->status(403)->json([
+                'success' => false,
+                'error' => "Method {$method} not allowed for User entity via API. Only GET and PUT are supported."
+            ]);
+            exit;
+        }
+        
+        // Only GET and PUT allowed for Users
+        if (!in_array($method, ['GET', 'PUT'])) {
+            $response->status(405)->json([
+                'success' => false,
+                'error' => "Method not allowed"
+            ]);
+            exit;
+        }
+    }
+    
+    // Articles - Full CRUD allowed (GET, POST, PUT, DELETE)
+    // Categories and Tags under articles - Full access
     
     // Check if module and entity exist
     $module = ModuleLoader::getModule($moduleName);

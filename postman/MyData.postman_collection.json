@@ -433,6 +433,55 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "GET API Documentation",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/C:/Program Files/Git/api",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "C:",
+                        "Program Files",
+                        "Git",
+                        "api"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "GET Root Documentation HTML",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/C:/Program Files/Git",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "C:",
+                        "Program Files",
+                        "Git"
+                    ]
+                }
+            },
+            "response": []
         }
     ]
 }
