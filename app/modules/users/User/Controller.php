@@ -5,6 +5,7 @@ namespace App\Modules\Users\User;
 use App\Core\Classes\BaseController;
 use App\Core\Libraries\Encrypt;
 use App\Core\Libraries\Sanitizer;
+use App\Core\ResponseFilter;
 
 class Controller extends BaseController
 {
@@ -57,10 +58,8 @@ class Controller extends BaseController
             return ['error' => 'User not found'];
         }
 
-        // Remove password from response
-        unset($user['password']);
-
-        return $user;
+        // Remove sensitive fields from response (OWASP API3:2023)
+        return ResponseFilter::filterUser($user);
     }
 
     /**
@@ -70,14 +69,12 @@ class Controller extends BaseController
     {
         $users = $this->repository->findAll();
 
-        // Remove passwords
-        foreach ($users as &$user) {
-            unset($user['password']);
-        }
+        // Remove sensitive fields from all users (OWASP API3:2023)
+        $filteredUsers = ResponseFilter::filterUsers($users);
 
         return [
-            'count' => count($users),
-            'data' => $users
+            'count' => count($filteredUsers),
+            'data' => $filteredUsers
         ];
     }
 

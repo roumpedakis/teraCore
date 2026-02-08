@@ -10,6 +10,7 @@ use App\Core\Factory;
 use App\Core\AuthController;
 use App\Core\AuthMiddleware;
 use App\Core\ApiDocumentation;
+use App\Core\SecurityMiddleware;
 
 // Load autoloader
 require_once __DIR__ . '/../app/Autoloader.php';
@@ -21,6 +22,9 @@ try {
     
     // Initialize logger
     Logger::init();
+    
+    // Initialize security middleware (OWASP best practices)
+    SecurityMiddleware::init();
     
     // Load all modules
     ModuleLoader::load();
@@ -119,6 +123,11 @@ try {
                     exit;
                 }
                 $result = $authController->verify($token);
+                // Return 401 if token is invalid
+                if (isset($result['success']) && !$result['success']) {
+                    $response->status(401)->json($result);
+                    exit;
+                }
                 break;
                 
             default:
