@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TeraCore Admin Users</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet" />
+  <link href="/admin/admin.css" rel="stylesheet" />
+</head>
+<body>
+  <div class="admin-shell">
+    <aside class="admin-sidebar">
+      <div class="brand">
+        <i class="fa-solid fa-shield-halved"></i>
+        <span>TeraCore</span>
+      </div>
+      <nav class="nav-list">
+        <a class="nav-link" href="/admin/dashboard"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+        <a class="nav-link" href="/admin/users"><i class="fa-solid fa-users"></i> Users</a>
+        <a class="nav-link" href="/admin/dashboard#admins"><i class="fa-solid fa-user-shield"></i> Admins</a>
+        <a class="nav-link" href="/admin/dashboard#permissions"><i class="fa-solid fa-key"></i> Permissions</a>
+        <button id="logout-button" class="btn btn-ghost mt-3">Logout</button>
+      </nav>
+    </aside>
+    <main class="admin-content">
+      <h1 class="page-title">Users</h1>
+      <p class="subtitle">Διαχείριση χρηστών, tokens και πρόσβασης.</p>
+
+      <section class="card fade-up">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <div>
+            <h2 class="mb-1">User Directory</h2>
+            <p class="subtitle">Επεξεργασία, revoke tokens, και δικαιώματα.</p>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-ghost">Export</button>
+            <button class="btn btn-primary">Invite</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Tokens</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="users-table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card mt-4 fade-up stagger-1">
+        <h2 class="mb-1">Access Control</h2>
+        <p class="subtitle">Ορίστε δικαιώματα πρόσβασης ανά υπηρεσία.</p>
+        <div class="section-grid">
+          <div class="metric">
+            <h3>Articles API</h3>
+            <span>Read/Write</span>
+          </div>
+          <div class="metric">
+            <h3>Users API</h3>
+            <span>Read Only</span>
+          </div>
+          <div class="metric">
+            <h3>Admin Panel</h3>
+            <span>Restricted</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="/admin/admin.js"></script>
+</body>
+</html>

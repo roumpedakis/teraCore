@@ -19,6 +19,15 @@
       "validation": "required|minLength:3|maxLength:150",
       "comment": "Admin name/identifier"
     },
+    "password": {
+      "type": "varchar(255)",
+      "nullable": true,
+      "fieldType": "password",
+      "view": "password",
+      "controller": "bcrypt",
+      "validation": "minLength:6",
+      "comment": "Admin password hash"
+    },
     "description": {
       "type": "text",
       "nullable": true,
