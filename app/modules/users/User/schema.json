@@ -57,6 +57,27 @@
       "controller": "raw",
       "comment": "Account active status"
     },
+    "refresh_token": {
+      "type": "varchar(500)",
+      "nullable": true,
+      "view": "hidden",
+      "controller": "raw",
+      "comment": "OAuth2 refresh token for JWT renewal"
+    },
+    "token_expires_at": {
+      "type": "datetime",
+      "nullable": true,
+      "view": "hidden",
+      "controller": "auto",
+      "comment": "When current access token expires"
+    },
+    "oauth2_provider": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "view": "hidden",
+      "controller": "raw",
+      "comment": "OAuth2 provider (google, facebook, github, etc)"
+    },
     "created_at": {
       "type": "timestamp",
       "nullable": false,
@@ -76,6 +97,7 @@
   },
   "indexes": [
     { "name": "idx_username", "columns": ["username"], "unique": true },
-    { "name": "idx_email", "columns": ["email"], "unique": true }
+    { "name": "idx_email", "columns": ["email"], "unique": true },
+    { "name": "idx_token_expires", "columns": ["token_expires_at"] }
   ]
 }

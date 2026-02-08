@@ -1,0 +1,69 @@
+{
+  "tableName": "admins",
+  "module": "core",
+  "description": "Admin user management for system administration",
+  "fields": {
+    "id": {
+      "type": "bigint",
+      "primaryKey": true,
+      "autoIncrement": true,
+      "comment": "Admin ID"
+    },
+    "name": {
+      "type": "varchar(150)",
+      "nullable": false,
+      "unique": true,
+      "fieldType": "text",
+      "view": "text",
+      "controller": "raw",
+      "validation": "required|minLength:3|maxLength:150",
+      "comment": "Admin name/identifier"
+    },
+    "description": {
+      "type": "text",
+      "nullable": true,
+      "fieldType": "description",
+      "view": "textarea",
+      "controller": "raw",
+      "validation": "maxLength:1000",
+      "comment": "Admin role description"
+    },
+    "status": {
+      "type": "enum('active','inactive','suspended')",
+      "nullable": false,
+      "default": "active",
+      "view": "select",
+      "controller": "raw",
+      "validation": "required|enum:active,inactive,suspended",
+      "comment": "Admin account status"
+    },
+    "created_at": {
+      "type": "timestamp",
+      "nullable": false,
+      "default": "CURRENT_TIMESTAMP",
+      "view": "datetime",
+      "controller": "raw",
+      "comment": "Creation timestamp"
+    },
+    "updated_at": {
+      "type": "timestamp",
+      "nullable": false,
+      "default": "CURRENT_TIMESTAMP",
+      "onUpdate": "CURRENT_TIMESTAMP",
+      "view": "datetime",
+      "controller": "raw",
+      "comment": "Last update timestamp"
+    }
+  },
+  "indexes": [
+    {
+      "name": "idx_status",
+      "columns": ["status"]
+    },
+    {
+      "name": "idx_created_at",
+      "columns": ["created_at"]
+    }
+  ],
+  "comment": "System admins and their management roles"
+}

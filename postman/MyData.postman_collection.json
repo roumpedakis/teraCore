@@ -197,6 +197,242 @@
                     "response": []
                 }
             ]
+        },
+        {
+            "name": "Authentication",
+            "item": [
+                {
+                    "name": "Auth - Register",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/C:/Program Files/Git/auth/register",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "C:",
+                                "Program Files",
+                                "Git",
+                                "auth",
+                                "register"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Auth - Login",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/C:/Program Files/Git/auth/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "C:",
+                                "Program Files",
+                                "Git",
+                                "auth",
+                                "login"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Auth - Refresh Token",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/C:/Program Files/Git/auth/refresh",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "C:",
+                                "Program Files",
+                                "Git",
+                                "auth",
+                                "refresh"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Auth - Logout",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/C:/Program Files/Git/auth/logout",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "C:",
+                                "Program Files",
+                                "Git",
+                                "auth",
+                                "logout"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Auth - Verify Token",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/C:/Program Files/Git/auth/verify",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "C:",
+                                "Program Files",
+                                "Git",
+                                "auth",
+                                "verify"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Admin",
+            "item": [
+                {
+                    "name": "Admin - Create",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/C:/Program Files/Git/core/admin",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "C:",
+                                "Program Files",
+                                "Git",
+                                "core",
+                                "admin"
+                            ]
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": ""
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Admin - List All",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/C:/Program Files/Git/core/admin",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "C:",
+                                "Program Files",
+                                "Git",
+                                "core",
+                                "admin"
+                            ]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Admin - Get By ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/core/admin/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "core",
+                                "admin",
+                                ":id"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }
