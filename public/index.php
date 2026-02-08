@@ -7,6 +7,8 @@ use App\Core\Response;
 use App\Core\Database;
 use App\Core\ModuleLoader;
 use App\Core\Factory;
+use App\Core\AuthController;
+use App\Core\AuthMiddleware;
 
 // Load autoloader
 require_once __DIR__ . '/../app/Autoloader.php';
@@ -44,6 +46,72 @@ try {
     // Route format: /module/entity/action or /module/entity/:id
     $segments = array_filter(explode('/', $path));
     $segments = array_values($segments); // Re-index after filter
+    
+    // Handle auth endpoints (/auth/register, /auth/login, etc.)
+    if (count($segments) >= 1 && strtolower($segments[0]) === 'auth') {
+        $authAction = strtolower($segments[1] ?? '');
+        $authController = new AuthController(Database::getInstance());
+        
+        // Route to appropriate auth action
+        switch ($authAction) {
+            case 'register':
+                if ($method !== 'POST') {
+                    $response->status(405)->json(['error' => 'Method not allowed']);
+                    exit;
+                }
+                $result = $authController->register($request->all());
+                break;
+                
+            case 'login':
+                if ($method !== 'POST') {
+                    $response->status(405)->json(['error' => 'Method not allowed']);
+                    exit;
+                }
+                $result = $authController->login($request->all());
+                break;
+                
+            case 'refresh':
+                if ($method !== 'POST') {
+                    $response->status(405)->json(['error' => 'Method not allowed']);
+                    exit;
+                }
+                $result = $authController->refresh($request->all());
+                break;
+                
+            case 'logout':
+                if ($method !== 'POST') {
+                    $response->status(405)->json(['error' => 'Method not allowed']);
+                    exit;
+                }
+                $result = $authController->logout($request->all());
+                break;
+                
+            case 'verify':
+                if ($method !== 'GET') {
+                    $response->status(405)->json(['error' => 'Method not allowed']);
+                    exit;
+                }
+                // Extract token from Authorization header
+                $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+                $token = null;
+                if (preg_match('/Bearer\s+(.+)/', $authHeader, $matches)) {
+                    $token = $matches[1];
+                }
+                if (!$token) {
+                    $response->status(401)->json(['success' => false, 'error' => 'No token provided']);
+                    exit;
+                }
+                $result = $authController->verify($token);
+                break;
+                
+            default:
+                $response->status(404)->json(['error' => 'Auth endpoint not found']);
+                exit;
+        }
+        
+        $response->json($result);
+        exit;
+    }
     
     if (count($segments) < 2) {
         Logger::warning("Not enough segments in path", ['segments' => $segments]);

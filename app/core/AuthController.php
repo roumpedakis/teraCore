@@ -17,10 +17,12 @@ use App\Modules\Users\User\Model as UserModel;
 class AuthController
 {
     private UserRepository $userRepo;
+    private Database $db;
 
-    public function __construct()
+    public function __construct(Database $db = null)
     {
-        $this->userRepo = new UserRepository();
+        $this->db = $db ?? Database::getInstance();
+        $this->userRepo = new UserRepository($this->db);
     }
 
     /**
@@ -53,28 +55,39 @@ class AuthController
             return ['success' => false, 'error' => 'Password must be at least 6 characters'];
         }
 
-        // Hash password
-        $hashedPassword = password_hash($data['password'], PASSWORD_BCRYPT);
+        try {
+            // Hash password
+            $hashedPassword = password_hash($data['password'], PASSWORD_BCRYPT);
 
-        // Create user
-        $user = $this->userRepo->create([
-            'username' => $data['username'],
-            'email' => $data['email'],
-            'password' => $hashedPassword,
-            'first_name' => $data['first_name'] ?? null,
-            'last_name' => $data['last_name'] ?? null,
-            'is_active' => 1,
-        ]);
+            // Create user
+            $this->userRepo->insert([
+                'username' => $data['username'],
+                'email' => $data['email'],
+                'password' => $hashedPassword,
+                'first_name' => $data['first_name'] ?? null,
+                'last_name' => $data['last_name'] ?? null,
+                'is_active' => 1,
+            ]);
 
-        return [
-            'success' => true,
-            'message' => 'User registered successfully',
-            'data' => [
-                'id' => $user['id'],
-                'username' => $user['username'],
-                'email' => $user['email'],
-            ]
-        ];
+            $userId = (int)$this->db->lastInsertId();
+            $user = $this->userRepo->findById($userId);
+
+            if (!$user) {
+                return ['success' => false, 'error' => 'User created but could not be retrieved'];
+            }
+
+            return [
+                'success' => true,
+                'message' => 'User registered successfully',
+                'data' => [
+                    'id' => $user['id'],
+                    'username' => $user['username'],
+                    'email' => $user['email'],
+                ]
+            ];
+        } catch (\Exception $e) {
+            return ['success' => false, 'error' => 'Registration failed: ' . $e->getMessage()];
+        }
     }
 
     /**
@@ -118,7 +131,7 @@ class AuthController
 
         // Store refresh token in database
         $expiresAt = date('Y-m-d H:i:s', time() + 2592000);
-        $this->userRepo->update($user['id'], [
+        $this->userRepo->update((int)$user['id'], [
             'refresh_token' => $refreshToken,
             'token_expires_at' => $expiresAt,
         ]);
@@ -204,7 +217,7 @@ class AuthController
         }
 
         // Clear refresh token from database
-        $this->userRepo->update($userId, [
+        $this->userRepo->update((int)$userId, [
             'refresh_token' => null,
             'token_expires_at' => null,
         ]);
@@ -234,7 +247,7 @@ class AuthController
             return ['success' => false, 'error' => 'Invalid token payload'];
         }
 
-        $user = $this->userRepo->find($userId);
+        $user = $this->userRepo->findById($userId);
         if (!$user) {
             return ['success' => false, 'error' => 'User not found'];
         }
