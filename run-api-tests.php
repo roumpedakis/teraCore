@@ -44,6 +44,9 @@ try {
     $test->test_create_article();
     $test->test_get_articles_public();
     $test->test_get_single_article();
+    $test->test_articles_pagination();
+    $test->test_filter_articles_by_id();
+    $test->test_order_articles_desc();
     $test->test_update_article();
     $test->test_get_user_profile();
     $test->test_update_user_profile();

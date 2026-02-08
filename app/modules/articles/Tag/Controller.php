@@ -6,7 +6,7 @@ use App\Core\Classes\BaseController;
 
 class Controller extends BaseController
 {
-    public function create(array $data): array
+    public function create(array $data): mixed
     {
         if (empty($data['name'])) {
             return ['error' => 'Tag name is required'];
@@ -15,7 +15,7 @@ class Controller extends BaseController
         return parent::create($data);
     }
 
-    public function update(string $id, array $data): array
+    public function update(string $id, array $data): mixed
     {
         if (isset($data['name']) && empty($data['name'])) {
             return ['error' => 'Tag name cannot be empty'];

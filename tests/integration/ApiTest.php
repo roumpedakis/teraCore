@@ -12,6 +12,7 @@ class ApiTest
     protected string $refreshToken = '';
     protected int $testUserId = 0;
     protected int $testArticleId = 0;
+    protected int $firstArticleId = 0;
 
     /**
      * Helper: Make HTTP request
@@ -40,8 +41,22 @@ class ApiTest
         
         $response = curl_exec($ch);
         curl_close($ch);
-        
-        return json_decode($response, true) ?? [];
+
+        $decoded = json_decode($response, true);
+        if (json_last_error() === JSON_ERROR_NONE) {
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+            if (is_string($decoded)) {
+                $decodedTwice = json_decode($decoded, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decodedTwice)) {
+                    return $decodedTwice;
+                }
+            }
+            return ['_value' => $decoded];
+        }
+
+        return ['_raw' => $response];
     }
 
     /**
@@ -82,6 +97,7 @@ class ApiTest
         
         $this->accessToken = $response['tokens']['access_token'];
         $this->refreshToken = $response['tokens']['refresh_token'];
+        $this->testUserId = (int)($response['data']['user_id'] ?? 0);
         
         echo "  Access Token: " . substr($this->accessToken, 0, 20) . "...\n";
         echo "  Expires In: {$response['tokens']['expires_in']} seconds\n";
@@ -137,12 +153,14 @@ class ApiTest
         echo "\n✓ TEST: Get Articles (Public)\n";
         
         $response = $this->request('GET', '/articles/article');
-        
-        $this->assertNotEmpty($response['count'] ?? null, 'Should return count');
-        $this->assertNotEmpty($response['data'] ?? null, 'Should return articles array');
-        $this->assertGreaterThanOrEqual(1, $response['count'], 'Should have at least 1 article');
-        
-        echo "  Total Articles: {$response['count']}\n";
+
+        $list = $this->getListData($response);
+        $this->assertNotEmpty($list['data'], 'Should return articles array');
+        $this->assertGreaterThanOrEqual(1, $list['count'], 'Should have at least 1 article');
+
+        $this->firstArticleId = (int)($list['data'][0]['id'] ?? 0);
+        echo "  Total Articles: {$list['count']}\n";
+        echo "  First Article ID: {$this->firstArticleId}\n";
     }
 
     /**
@@ -158,6 +176,68 @@ class ApiTest
         $this->assertEqual($this->testArticleId, $response['id'], 'Should return correct article');
         
         echo "  Article Title: {$response['title']}\n";
+    }
+
+    /**
+     * Test 7b: Articles Pagination
+     */
+    public function test_articles_pagination(): void
+    {
+        echo "\n✓ TEST: Articles Pagination\n";
+
+        $response = $this->request('GET', '/articles/article?limit=1&offset=0&orderBy=id&order=DESC');
+        $list = $this->getListData($response);
+
+        $this->assertNotEmpty($list['data'], 'Should return at least 1 article');
+        $this->assertTrue(count($list['data']) <= 1, 'Should return at most 1 article');
+
+        if (!empty($list['pagination'])) {
+            $this->assertEqual(1, (int)$list['pagination']['limit'], 'Limit should be 1');
+            $this->assertEqual(0, (int)$list['pagination']['offset'], 'Offset should be 0');
+        }
+
+        echo "  Pagination OK\n";
+    }
+
+    /**
+     * Test 7c: Filter Articles by ID
+     */
+    public function test_filter_articles_by_id(): void
+    {
+        echo "\n✓ TEST: Filter Articles by ID\n";
+
+        if ($this->firstArticleId === 0) {
+            throw new \Exception('No article ID available for filtering');
+        }
+
+        $response = $this->request('GET', "/articles/article?id={$this->firstArticleId}");
+        $list = $this->getListData($response);
+
+        $this->assertNotEmpty($list['data'], 'Should return filtered article');
+        foreach ($list['data'] as $item) {
+            $this->assertEqual($this->firstArticleId, (int)$item['id'], 'Filtered ID should match');
+        }
+
+        echo "  Filter matched ID: {$this->firstArticleId}\n";
+    }
+
+    /**
+     * Test 7d: Order Articles Desc
+     */
+    public function test_order_articles_desc(): void
+    {
+        echo "\n✓ TEST: Order Articles Desc\n";
+
+        $response = $this->request('GET', '/articles/article?orderBy=id&order=DESC&limit=2');
+        $list = $this->getListData($response);
+
+        if (count($list['data']) >= 2) {
+            $first = (int)$list['data'][0]['id'];
+            $second = (int)$list['data'][1]['id'];
+            $this->assertTrue($first >= $second, 'Results should be ordered desc by id');
+        }
+
+        echo "  Ordering OK\n";
     }
 
     /**
@@ -177,12 +257,12 @@ class ApiTest
     {
         echo "\n✓ TEST: Get User Profile\n";
         
-        $response = $this->request('GET', "/users/user/7", [], [
+        $response = $this->request('GET', "/users/user/{$this->testUserId}", [], [
             'Authorization' => 'Bearer ' . $this->accessToken
         ]);
         
         $this->assertNotEmpty($response['id'] ?? null, 'Should return user data');
-        $this->assertEqual(7, $response['id'], 'Should return correct user');
+        $this->assertEqual($this->testUserId, $response['id'], 'Should return correct user');
         
         echo "  Username: {$response['username']}\n";
         echo "  Email: {$response['email']}\n";
@@ -197,15 +277,18 @@ class ApiTest
         
         $newEmail = 'updated_' . time() . '@test.com';
         
-        $response = $this->request('PUT', "/users/user/7", [
+        $response = $this->request('PUT', "/users/user/{$this->testUserId}", [
             'first_name' => 'John',
             'last_name' => 'Updated',
             'email' => $newEmail
         ], [
             'Authorization' => 'Bearer ' . $this->accessToken
         ]);
-        
-        $this->assertTrue($response['success'] ?? false, 'User update should succeed');
+
+        if (!($response['success'] ?? false)) {
+            $details = json_encode($response);
+            throw new \Exception("User update failed: {$details}");
+        }
         
         echo "  Updated user profile\n";
     }
@@ -302,7 +385,7 @@ class ApiTest
         echo "\n✓ TEST: Logout\n";
         
         $response = $this->request('POST', '/auth/logout', [
-            'user_id' => 7
+            'user_id' => $this->testUserId
         ], [
             'Authorization' => 'Bearer ' . $this->accessToken
         ]);
@@ -327,6 +410,69 @@ class ApiTest
         
         echo "  API Version: {$response['version']}\n";
         echo "  Total Endpoints: {$response['totalEndpoints']}\n";
+    }
+
+    /**
+     * Helper: Normalize list responses
+     */
+    private function getListData(array $response): array
+    {
+        if (isset($response['_raw'])) {
+            $snippet = substr((string)$response['_raw'], 0, 200);
+            throw new \Exception("Non-JSON response received: {$snippet}");
+        }
+
+        if (isset($response['data']) && isset($response['pagination'])) {
+            $data = $this->normalizeListData($response['data']);
+            $count = (int)($response['pagination']['total'] ?? count($response['data']));
+            return [
+                'data' => $data,
+                'count' => $count,
+                'pagination' => $response['pagination']
+            ];
+        }
+
+        if (isset($response['data']) && isset($response['count'])) {
+            $data = $this->normalizeListData($response['data']);
+            return [
+                'data' => $data,
+                'count' => (int)$response['count'],
+                'pagination' => []
+            ];
+        }
+
+        $data = $this->normalizeListData($response);
+        return [
+            'data' => $data,
+            'count' => is_array($data) ? count($data) : 0,
+            'pagination' => []
+        ];
+    }
+
+    /**
+     * Normalize list data into a numeric array of items
+     */
+    private function normalizeListData(mixed $data): array
+    {
+        if (!is_array($data)) {
+            return [];
+        }
+
+        if ($this->isAssoc($data)) {
+            if (array_key_exists('id', $data)) {
+                return [$data];
+            }
+        }
+
+        return array_values($data);
+    }
+
+    /**
+     * Check if array has string keys
+     */
+    private function isAssoc(array $data): bool
+    {
+        return array_keys($data) !== range(0, count($data) - 1);
     }
 
     /**

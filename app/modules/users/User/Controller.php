@@ -21,7 +21,7 @@ class Controller extends BaseController
      * Create new user
         * Override to add password hashing and email validation
      */
-    public function create(array $data): array
+    public function create(array $data): mixed
     {
         // Custom validation for users
         if (empty($data['email']) || !Sanitizer::validateEmail($data['email'])) {
@@ -46,7 +46,7 @@ class Controller extends BaseController
      * Update user
      * Override to add password hashing if password is being updated
      */
-    public function update(string $id, array $data): array
+    public function update(string $id, array $data): mixed
     {
         // Validate email if provided
         if (isset($data['email']) && !Sanitizer::validateEmail($data['email'])) {
@@ -68,7 +68,7 @@ class Controller extends BaseController
             $data['email'] = Sanitizer::sanitizeEmail($data['email']);
         }
         
-    // Call parent update method (handles sanitization, updated_by, etc.)
-    return parent::update($id, $data);
+        // Call parent update method (handles sanitization, updated_by, etc.)
+        return parent::update($id, $data);
     }
 }

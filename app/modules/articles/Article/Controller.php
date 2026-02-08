@@ -6,7 +6,7 @@ use App\Core\Classes\BaseController;
 
 class Controller extends BaseController
 {
-    public function create(array $data): array 
+    public function create(array $data): mixed 
     {
         // Validate required fields
         if (empty($data['title']) || empty($data['content'])) {
@@ -33,7 +33,7 @@ class Controller extends BaseController
         return parent::create($data);
     }
 
-    public function update(string $id, array $data): array
+    public function update(string $id, array $data): mixed
     {
         // Generate slug if title is being updated
         if (isset($data['title'])) {
