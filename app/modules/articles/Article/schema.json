@@ -1,4 +1,5 @@
 {
+  "tableName": "articles",
   "module": "articles",
   "description": "Article management",
   "fields": {

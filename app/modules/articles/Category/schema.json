@@ -1,4 +1,5 @@
 {
+  "tableName": "article_categories",
   "module": "articles",
   "description": "Article categories",
   "fields": {

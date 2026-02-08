@@ -1,4 +1,5 @@
 {
+  "tableName": "article_tags",
   "module": "articles",
   "description": "Article tags",
   "fields": {
