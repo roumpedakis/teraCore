@@ -1,0 +1,12 @@
+#!/bin/sh
+# Prevent commits that modify app/ or public/ without updating the Postman collection
+STAGED=$(git diff --name-only --cached)
+if echo "$STAGED" | grep -Eq '^(app/|public/|routes/)' ; then
+  if ! echo "$STAGED" | grep -q '^postman/MyData.postman_collection.json$' ; then
+    echo "ERROR: You changed code under app/ or public/ (or routes/) but did not stage postman/MyData.postman_collection.json."
+    echo "Please update the Postman collection with: php scripts/update_postman_collection.php --name=\"...\" --method=... --path=\"/...\""
+    echo "Or stage postman/MyData.postman_collection.json before committing."
+    exit 1
+  fi
+fi
+exit 0
