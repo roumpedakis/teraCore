@@ -167,6 +167,36 @@
                 }
             },
             "response": []
+        },
+        {
+            "name": "Field Types",
+            "item": [
+                {
+                    "name": "Field Types - List All",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/C:/Program Files/Git/field-types",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "C:",
+                                "Program Files",
+                                "Git",
+                                "field-types"
+                            ]
+                        }
+                    },
+                    "response": []
+                }
+            ]
         }
     ]
 }

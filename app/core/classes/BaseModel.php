@@ -3,6 +3,7 @@
 namespace App\Core\Classes;
 
 use App\Core\Database;
+use App\Core\Translator;
 
 abstract class BaseModel
 {
@@ -10,6 +11,9 @@ abstract class BaseModel
     protected array $attributes = [];
     protected array $original = [];
     protected bool $exists = false;
+    protected ?Translator $translator = null;
+    protected array $translatableFields = [];
+    protected array $translations = [];
 
     /**
      * Get table name
@@ -130,6 +134,118 @@ abstract class BaseModel
         }
         return $dirty;
     }
+
+    /**
+     * Initialize translator instance
+     */
+    public function initializeTranslator(): void
+    {
+        if (is_null($this->translator)) {
+            $this->translator = new Translator(Database::getInstance());
+        }
+    }
+
+    /**
+     * Get translator instance
+     */
+    public function getTranslator(): Translator
+    {
+        $this->initializeTranslator();
+        return $this->translator;
+    }
+
+    /**
+     * Set translatable fields
+     */
+    public function setTranslatableFields(array $fields): void
+    {
+        $this->translatableFields = $fields;
+    }
+
+    /**
+     * Get translatable fields
+     */
+    public function getTranslatableFields(): array
+    {
+        return $this->translatableFields;
+    }
+
+    /**
+     * Save translation for a field
+     */
+    public function saveTranslation(
+        int $entityId,
+        string $fieldName,
+        string $languageCode,
+        mixed $value
+    ): bool {
+        $this->initializeTranslator();
+        
+        $entityType = strtolower(class_basename($this));
+        return $this->translator->saveTranslation(
+            $entityType,
+            $entityId,
+            $fieldName,
+            $languageCode,
+            $value
+        );
+    }
+
+    /**
+     * Get translation for a field
+     */
+    public function getTranslation(
+        int $entityId,
+        string $fieldName,
+        string $languageCode
+    ): ?string {
+        $this->initializeTranslator();
+        
+        $entityType = strtolower(class_basename($this));
+        return $this->translator->getTranslation(
+            $entityType,
+            $entityId,
+            $fieldName,
+            $languageCode
+        );
+    }
+
+    /**
+     * Get all translations for a field
+     */
+    public function getAllTranslations(
+        int $entityId,
+        string $fieldName
+    ): array {
+        $this->initializeTranslator();
+        
+        $entityType = strtolower(class_basename($this));
+        return $this->translator->getAllTranslations(
+            $entityType,
+            $entityId,
+            $fieldName
+        );
+    }
+
+    /**
+     * Store translation data temporarily
+     */
+    public function storeTranslation(string $fieldName, string $languageCode, mixed $value): void
+    {
+        if (!isset($this->translations[$fieldName])) {
+            $this->translations[$fieldName] = [];
+        }
+        $this->translations[$fieldName][$languageCode] = $value;
+    }
+
+    /**
+     * Get stored translations
+     */
+    public function getStoredTranslations(): array
+    {
+        return $this->translations;
+    }
+
 }
 
 /**
