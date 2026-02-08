@@ -50,7 +50,7 @@ class SessionHandler
 
         $value = $_SESSION[$key] ?? $default;
 
-        if ($value && Config::get('SESSION_ENCRYPT') === 'true') {
+        if (is_string($value) && $value !== '' && Config::get('SESSION_ENCRYPT') === 'true') {
             try {
                 $value = Encrypt::decrypt($value);
             } catch (\Exception $e) {

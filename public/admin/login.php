@@ -6,7 +6,7 @@ $loginError = $loginError ?? '';
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>TeraCore Admin Login</title>
+  <title>TeraCore - Είσοδος Διαχειριστή</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
@@ -19,26 +19,29 @@ $loginError = $loginError ?? '';
     <section class="login-card fade-up">
       <div class="brand mb-3">
         <i class="fa-solid fa-shield-halved"></i>
-        <span>TeraCore Admin</span>
+        <span>TeraCore Διαχείριση</span>
       </div>
-      <h1 class="page-title mb-2">Sign in</h1>
-      <p class="subtitle mb-4">Είσοδος για διαχείριση χρηστών και admins.</p>
+      <h1 class="page-title mb-2">Είσοδος</h1>
+      <p class="subtitle mb-4">Πρόσβαση στον πίνακα διαχείρισης.</p>
       <form id="admin-login-form" class="form-grid" method="POST" action="/admin/login">
         <div>
-          <label class="form-label" for="admin-username">Admin Username</label>
+          <label class="form-label" for="admin-username">Όνομα χρήστη</label>
           <input class="form-control" id="admin-username" name="username" placeholder="admin" required />
         </div>
         <div>
-          <label class="form-label" for="admin-password">Password</label>
+          <label class="form-label" for="admin-password">Κωδικός</label>
           <input class="form-control" id="admin-password" name="password" type="password" placeholder="••••••" required />
         </div>
         <?php if (!empty($loginError)) : ?>
           <p id="login-error" class="text-danger"><?php echo htmlspecialchars($loginError); ?></p>
         <?php endif; ?>
-        <button class="btn btn-primary" type="submit">Login</button>
+        <button class="btn btn-primary" type="submit">Σύνδεση</button>
       </form>
-      <p class="subtitle mt-3">Σημείωση: ο admin έχει ξεχωριστό password.</p>
+      <p class="subtitle mt-3">Ο διαχειριστής χρησιμοποιεί ξεχωριστό κωδικό.</p>
     </section>
   </main>
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/admin/admin.js"></script>
 </body>
 </html>

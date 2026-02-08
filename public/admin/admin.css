@@ -1,11 +1,13 @@
 :root {
-  --ink: #1c2420;
-  --stone: #f6f2ea;
-  --sand: #e8dcc9;
-  --teal: #0f7d73;
-  --teal-dark: #0a5e56;
-  --gold: #d3a95c;
-  --shadow: 0 18px 45px rgba(15, 24, 20, 0.12);
+  --ink: #0e1f20;
+  --stone: #f5f7f6;
+  --sand: #e3ebe7;
+  --petrol: #0b4d57;
+  --petrol-dark: #083a41;
+  --teal: #1a8f8a;
+  --mint: #42b07a;
+  --gold: #e1b874;
+  --shadow: 0 24px 55px rgba(8, 33, 35, 0.18);
   --radius: 18px;
   --mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
@@ -19,7 +21,8 @@ body {
   margin: 0;
   font-family: var(--display);
   color: var(--ink);
-  background: radial-gradient(1200px 600px at 10% -10%, #f0efe8 0%, #f6f2ea 45%, #f3efe6 100%);
+  background: radial-gradient(900px 520px at 12% -10%, rgba(26, 143, 138, 0.18) 0%, transparent 65%),
+    linear-gradient(180deg, #f5f7f6 0%, #edf3f0 100%);
   min-height: 100vh;
 }
 
@@ -31,7 +34,7 @@ body {
 
 .admin-sidebar {
   padding: 32px 24px;
-  background: linear-gradient(160deg, #0f7d73 0%, #0b6a60 50%, #084b45 100%);
+  background: linear-gradient(160deg, #0b4d57 0%, #0f6b72 50%, #0f3d41 100%);
   color: #f2f7f4;
   position: relative;
   overflow: hidden;
@@ -56,8 +59,12 @@ body {
 }
 
 .brand i {
-  font-size: 24px;
+  font-size: 20px;
   color: var(--gold);
+}
+
+.nav-link i {
+  font-size: 16px;
 }
 
 .nav-list {
@@ -82,6 +89,11 @@ body {
   transform: translateX(4px);
 }
 
+.nav-link.is-active {
+  background: rgba(255, 255, 255, 0.22);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
 .admin-content {
   padding: 32px 48px 56px;
 }
@@ -94,7 +106,7 @@ body {
 .subtitle {
   font-size: 15px;
   letter-spacing: 0.03em;
-  color: #475048;
+  color: #456060;
 }
 
 .card {
@@ -118,8 +130,8 @@ body {
 .metric {
   padding: 18px;
   border-radius: 14px;
-  background: linear-gradient(140deg, #fdfbf7 0%, #f1ebe0 100%);
-  border: 1px solid #efe5d7;
+  background: linear-gradient(140deg, #f7fbf9 0%, #e7f0ec 100%);
+  border: 1px solid rgba(26, 143, 138, 0.18);
 }
 
 .metric h3 {
@@ -130,7 +142,7 @@ body {
 .metric span {
   font-family: var(--mono);
   font-size: 14px;
-  color: #576358;
+  color: #3f5d5d;
 }
 
 .table-wrap {
@@ -154,7 +166,7 @@ body {
   font-size: 12px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #7a6f60;
+  color: #5d6e6f;
 }
 
 .tag {
@@ -163,8 +175,8 @@ body {
   gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;
-  background: rgba(15, 125, 115, 0.1);
-  color: var(--teal-dark);
+  background: rgba(26, 143, 138, 0.12);
+  color: var(--petrol);
   font-size: 12px;
   font-weight: 600;
 }
@@ -178,25 +190,44 @@ body {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.btn-icon {
+  padding: 8px 10px;
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-sm.btn-icon {
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+}
+
 .btn-primary {
   background: var(--teal);
   color: #f5fbf9;
-  box-shadow: 0 10px 20px rgba(15, 125, 115, 0.2);
+  box-shadow: 0 10px 20px rgba(26, 143, 138, 0.2);
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(15, 125, 115, 0.24);
+  box-shadow: 0 12px 24px rgba(26, 143, 138, 0.24);
 }
 
 .btn-ghost {
   background: transparent;
-  color: var(--teal-dark);
-  border: 1px solid rgba(15, 125, 115, 0.35);
+  color: var(--petrol);
+  border: 1px solid rgba(26, 143, 138, 0.35);
+}
+
+.btn-ghost:hover {
+  background: rgba(26, 143, 138, 0.08);
 }
 
 .btn-danger {
-  background: #c94c4c;
+  background: #b34747;
   color: #fff;
 }
 
@@ -209,7 +240,7 @@ body {
   width: 100%;
   padding: 10px 12px;
   border-radius: 10px;
-  border: 1px solid #e7dfd2;
+  border: 1px solid #d9e5df;
   background: #fff;
   font-family: var(--display);
 }
@@ -218,7 +249,7 @@ body {
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #6f695e;
+  color: #4b6768;
 }
 
 .login-shell {
@@ -242,7 +273,7 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background: radial-gradient(240px 180px at 90% -20%, rgba(15, 125, 115, 0.2) 0%, transparent 70%);
+  background: radial-gradient(240px 180px at 90% -20%, rgba(26, 143, 138, 0.22) 0%, transparent 70%);
   pointer-events: none;
 }
 

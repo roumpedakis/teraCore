@@ -59,6 +59,12 @@ try {
         exit;
     }
 
+    // Handle favicon
+    if ($path === '/favicon.ico') {
+        http_response_code(204);
+        exit;
+    }
+
     // Handle admin UI routes
     if (strpos($path, '/admin') === 0) {
         SessionHandler::init();
@@ -95,17 +101,17 @@ try {
 
             $loginError = '';
             if (empty($username) || empty($password)) {
-                $loginError = 'Symplirwse username kai password.';
+                $loginError = 'Συμπλήρωσε όνομα χρήστη και κωδικό.';
             } else {
                 $db = Database::getInstance();
                 $adminRepo = new AdminRepository($db);
 
                 $admin = $adminRepo->findByName($username);
                 if (!$admin || !password_verify($password, $admin['password'] ?? '')) {
-                    $loginError = 'Lathos stoixia.';
+                    $loginError = 'Λάθος στοιχεία.';
                 } else {
                     if (($admin['status'] ?? '') !== 'active') {
-                        $loginError = 'Den exeis dikaioma admin.';
+                        $loginError = 'Δεν έχεις δικαίωμα admin.';
                     } else {
                         SessionHandler::regenerate();
                         SessionHandler::set('admin_user', [
@@ -118,7 +124,7 @@ try {
                 }
             }
 
-            $loginError = $loginError ?: 'Lathos stoixia.';
+            $loginError = $loginError ?: 'Λάθος στοιχεία.';
             $adminUser = SessionHandler::get('admin_user');
             include __DIR__ . '/admin/login.php';
             exit;
@@ -149,6 +155,12 @@ try {
             $input = $request->all();
             $action = $input['action'] ?? '';
             $userId = (int)($input['user_id'] ?? 0);
+            $username = Sanitizer::sanitizeString($input['username'] ?? '');
+            $email = Sanitizer::sanitizeEmail($input['email'] ?? '');
+            $firstName = Sanitizer::sanitizeString($input['first_name'] ?? '');
+            $lastName = Sanitizer::sanitizeString($input['last_name'] ?? '');
+            $password = $input['password'] ?? '';
+            $isActive = isset($input['is_active']) ? 1 : 0;
 
             if ($userId > 0) {
                 if ($action === 'revoke') {
@@ -170,6 +182,32 @@ try {
                 if ($action === 'delete') {
                     $userRepo->delete($userId);
                 }
+            }
+
+            if ($action === 'create') {
+                if (!empty($username) && Sanitizer::validateEmail($email) && !empty($password)) {
+                    $userRepo->insert([
+                        'username' => $username,
+                        'email' => $email,
+                        'password' => password_hash($password, PASSWORD_BCRYPT),
+                        'first_name' => $firstName,
+                        'last_name' => $lastName,
+                        'is_active' => $isActive
+                    ]);
+                }
+            }
+
+            if ($action === 'update' && $userId > 0) {
+                $payload = [
+                    'email' => $email,
+                    'first_name' => $firstName,
+                    'last_name' => $lastName,
+                    'is_active' => $isActive
+                ];
+                if (!empty($password)) {
+                    $payload['password'] = password_hash($password, PASSWORD_BCRYPT);
+                }
+                $userRepo->update($userId, $payload);
             }
 
             header('Location: /admin/users');

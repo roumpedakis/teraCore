@@ -66,7 +66,7 @@ class AuthController
                 'password' => $hashedPassword,
                 'first_name' => $data['first_name'] ?? null,
                 'last_name' => $data['last_name'] ?? null,
-                'is_active' => 1,
+                'is_active' => 0,
             ]);
 
             $userId = (int)$this->db->lastInsertId();
