@@ -1,0 +1,11 @@
+{
+  "name": "articles",
+  "version": "1.0.0",
+  "status": "active",
+  "description": "Article management module with categories and tags",
+  "author": "teraCore",
+  "installDate": "2026-02-08",
+  "lastUpdated": "2026-02-08",
+  "dependencies": ["users"],
+  "entities": ["Article", "Category", "Tag"]
+}

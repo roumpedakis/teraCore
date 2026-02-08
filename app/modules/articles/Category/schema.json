@@ -1,0 +1,39 @@
+{
+  "module": "articles",
+  "description": "Article categories",
+  "fields": {
+    "id": {
+      "type": "int",
+      "primaryKey": true,
+      "autoIncrement": true,
+      "comment": "Category ID"
+    },
+    "name": {
+      "type": "varchar(100)",
+      "nullable": false,
+      "unique": true,
+      "view": "text",
+      "controller": "raw",
+      "validation": "required|unique:article_categories,name",
+      "comment": "Category name"
+    },
+    "description": {
+      "type": "text",
+      "nullable": true,
+      "view": "textarea",
+      "controller": "raw",
+      "comment": "Category description"
+    },
+    "created_at": {
+      "type": "timestamp",
+      "nullable": false,
+      "default": "CURRENT_TIMESTAMP",
+      "view": "hidden",
+      "controller": "auto",
+      "comment": "Creation timestamp"
+    }
+  },
+  "indexes": [
+    { "name": "idx_name", "columns": ["name"], "unique": true }
+  ]
+}

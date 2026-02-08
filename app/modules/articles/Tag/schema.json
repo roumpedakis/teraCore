@@ -1,0 +1,32 @@
+{
+  "module": "articles",
+  "description": "Article tags",
+  "fields": {
+    "id": {
+      "type": "int",
+      "primaryKey": true,
+      "autoIncrement": true,
+      "comment": "Tag ID"
+    },
+    "name": {
+      "type": "varchar(50)",
+      "nullable": false,
+      "unique": true,
+      "view": "text",
+      "controller": "raw",
+      "validation": "required|unique:article_tags,name|maxLength:50",
+      "comment": "Tag name"
+    },
+    "created_at": {
+      "type": "timestamp",
+      "nullable": false,
+      "default": "CURRENT_TIMESTAMP",
+      "view": "hidden",
+      "controller": "auto",
+      "comment": "Creation timestamp"
+    }
+  },
+  "indexes": [
+    { "name": "idx_name", "columns": ["name"], "unique": true }
+  ]
+}

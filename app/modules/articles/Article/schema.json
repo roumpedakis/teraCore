@@ -1,0 +1,90 @@
+{
+  "module": "articles",
+  "description": "Article management",
+  "fields": {
+    "id": {
+      "type": "int",
+      "primaryKey": true,
+      "autoIncrement": true,
+      "comment": "Article ID"
+    },
+    "title": {
+      "type": "varchar(200)",
+      "nullable": false,
+      "view": "text",
+      "controller": "raw",
+      "validation": "required|minLength:5|maxLength:200",
+      "comment": "Article title"
+    },
+    "slug": {
+      "type": "varchar(200)",
+      "nullable": false,
+      "unique": true,
+      "view": "text",
+      "controller": "slug",
+      "validation": "required|unique:articles,slug",
+      "comment": "URL-friendly slug"
+    },
+    "content": {
+      "type": "longtext",
+      "nullable": false,
+      "view": "textarea",
+      "controller": "raw",
+      "validation": "required|minLength:10",
+      "comment": "Article content"
+    },
+    "summary": {
+      "type": "text",
+      "nullable": true,
+      "view": "textarea",
+      "controller": "raw",
+      "comment": "Short summary"
+    },
+    "author_id": {
+      "type": "int",
+      "nullable": false,
+      "view": "hidden",
+      "controller": "raw",
+      "validation": "required|exists:users,id",
+      "comment": "Author (User ID)"
+    },
+    "status": {
+      "type": "varchar(20)",
+      "nullable": false,
+      "default": "draft",
+      "view": "select",
+      "controller": "raw",
+      "validation": "required|in:draft,published,archived",
+      "options": ["draft", "published", "archived"],
+      "comment": "Publication status"
+    },
+    "published_at": {
+      "type": "timestamp",
+      "nullable": true,
+      "view": "datetime",
+      "controller": "raw",
+      "comment": "Publication date"
+    },
+    "created_at": {
+      "type": "timestamp",
+      "nullable": false,
+      "default": "CURRENT_TIMESTAMP",
+      "view": "hidden",
+      "controller": "auto",
+      "comment": "Creation timestamp"
+    },
+    "updated_at": {
+      "type": "timestamp",
+      "nullable": true,
+      "default": "NULL ON UPDATE CURRENT_TIMESTAMP",
+      "view": "hidden",
+      "controller": "auto",
+      "comment": "Last update timestamp"
+    }
+  },
+  "indexes": [
+    { "name": "idx_slug", "columns": ["slug"], "unique": true },
+    { "name": "idx_author_id", "columns": ["author_id"] },
+    { "name": "idx_status", "columns": ["status"] }
+  ]
+}

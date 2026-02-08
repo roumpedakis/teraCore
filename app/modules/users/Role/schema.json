@@ -1,0 +1,39 @@
+{
+  "module": "users",
+  "description": "Role management",
+  "fields": {
+    "id": {
+      "type": "int",
+      "primaryKey": true,
+      "autoIncrement": true,
+      "comment": "Role ID"
+    },
+    "name": {
+      "type": "varchar(50)",
+      "nullable": false,
+      "unique": true,
+      "view": "text",
+      "controller": "raw",
+      "validation": "required|unique:roles,name",
+      "comment": "Role name (admin, user, etc)"
+    },
+    "description": {
+      "type": "text",
+      "nullable": true,
+      "view": "textarea",
+      "controller": "raw",
+      "comment": "Role description"
+    },
+    "created_at": {
+      "type": "timestamp",
+      "nullable": false,
+      "default": "CURRENT_TIMESTAMP",
+      "view": "hidden",
+      "controller": "auto",
+      "comment": "Creation timestamp"
+    }
+  },
+  "indexes": [
+    { "name": "idx_name", "columns": ["name"], "unique": true }
+  ]
+}

@@ -1,0 +1,80 @@
+{
+  "module": "users",
+  "description": "User management module",
+  "fields": {
+    "id": {
+      "type": "int",
+      "primaryKey": true,
+      "autoIncrement": true,
+      "comment": "User ID"
+    },
+    "username": {
+      "type": "varchar(100)",
+      "nullable": false,
+      "unique": true,
+      "view": "text",
+      "controller": "raw",
+      "validation": "required|minLength:3|maxLength:100",
+      "comment": "Username"
+    },
+    "password": {
+      "type": "varchar(150)",
+      "nullable": false,
+      "view": "hidden",
+      "controller": "bcrypt",
+      "validation": "required|minLength:6",
+      "comment": "Encrypted password"
+    },
+    "email": {
+      "type": "varchar(120)",
+      "nullable": false,
+      "unique": true,
+      "view": "email",
+      "controller": "raw",
+      "validation": "required|email",
+      "comment": "User email"
+    },
+    "first_name": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "view": "text",
+      "controller": "raw",
+      "comment": "First name"
+    },
+    "last_name": {
+      "type": "varchar(50)",
+      "nullable": true,
+      "view": "text",
+      "controller": "raw",
+      "comment": "Last name"
+    },
+    "is_active": {
+      "type": "tinyint(1)",
+      "nullable": false,
+      "default": 1,
+      "view": "checkbox",
+      "controller": "raw",
+      "comment": "Account active status"
+    },
+    "created_at": {
+      "type": "timestamp",
+      "nullable": false,
+      "default": "CURRENT_TIMESTAMP",
+      "view": "hidden",
+      "controller": "auto",
+      "comment": "Creation timestamp"
+    },
+    "updated_at": {
+      "type": "timestamp",
+      "nullable": true,
+      "default": "NULL ON UPDATE CURRENT_TIMESTAMP",
+      "view": "hidden",
+      "controller": "auto",
+      "comment": "Last update timestamp"
+    }
+  },
+  "indexes": [
+    { "name": "idx_username", "columns": ["username"], "unique": true },
+    { "name": "idx_email", "columns": ["email"], "unique": true }
+  ]
+}
