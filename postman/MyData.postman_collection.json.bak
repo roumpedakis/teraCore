@@ -407,8 +407,57 @@
                         }
                     },
                     "response": []
+                },
+                {
+                    "name": "Admin - Get By ID",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/core/admin/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "core",
+                                "admin",
+                                ":id"
+                            ]
+                        }
+                    },
+                    "response": []
                 }
             ]
+        },
+        {
+            "name": "GET API Documentation",
+            "request": {
+                "method": "GET",
+                "header": [
+                    {
+                        "key": "Accept",
+                        "value": "application/json"
+                    }
+                ],
+                "url": {
+                    "raw": "{{baseUrl}}/C:/Program Files/Git/api",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "C:",
+                        "Program Files",
+                        "Git",
+                        "api"
+                    ]
+                }
+            },
+            "response": []
         }
     ]
 }
