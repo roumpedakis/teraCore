@@ -2,8 +2,8 @@
 
 namespace App\Core;
 
-use App\Modules\Users\User\Repository as UserRepository;
-use App\Modules\Users\User\Model as UserModel;
+use App\Modules\Core\User\Repository as UserRepository;
+use App\Modules\Core\User\Model as UserModel;
 
 /**
  * AuthController
@@ -125,9 +125,18 @@ class AuthController
             return ['success' => false, 'error' => 'Invalid credentials'];
         }
 
-        // Generate tokens
-        $accessToken = JWT::generateToken($user['id'], 3600); // 1 hour
-        $refreshToken = JWT::generateRefreshToken($user['id'], 2592000); // 30 days
+        // Get user's module permissions
+        $userModuleRepo = new UserModuleRepository();
+        $userModules = $userModuleRepo->getUserModules($user['id']);
+
+        // Generate tokens with module permissions
+        $additionalData = [
+            'username' => $user['username'],
+            'modules' => $userModules, // ['articles' => 15, 'comments' => 7]
+        ];
+        
+        $accessToken = JWT::generateToken($user['id'], null, $additionalData);
+        $refreshToken = JWT::generateRefreshToken($user['id'], null);
 
         // Store refresh token in database
         $expiresAt = date('Y-m-d H:i:s', time() + 2592000);
@@ -236,9 +245,9 @@ class AuthController
      */
     public function verify(string $token): array
     {
-        $payload = JWT::validateToken($token);
-
-        if (!$payload) {
+        try {
+            $payload = JWT::validateToken($token);
+        } catch (\Exception $e) {
             return ['success' => false, 'error' => 'Invalid or expired token'];
         }
 
