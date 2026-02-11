@@ -12,7 +12,7 @@ use App\Core\AuthMiddleware;
 use App\Core\ApiDocumentation;
 use App\Core\SecurityMiddleware;
 use App\Core\Handlers\SessionHandler;
-use App\Modules\Users\User\Repository as UserRepository;
+use App\Modules\Core\User\Repository as UserRepository;
 use App\Modules\Core\Admin\Repository as AdminRepository;
 use App\Core\Libraries\Sanitizer;
 
