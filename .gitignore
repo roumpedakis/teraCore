@@ -21,6 +21,7 @@ node_modules/
 # Logs
 storage/logs/*
 !storage/logs/.gitkeep
+public/server.log
 
 # Cache
 *.cache
@@ -29,6 +30,11 @@ storage/logs/*
 # Testing
 coverage/
 .phpunit.result.cache
+test-results.txt
+TEST-RESULTS.md
+
+# Local data
+database/
 
 # Project specific
 .composer-lock
