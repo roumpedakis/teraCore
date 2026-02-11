@@ -2,9 +2,14 @@
   "name": "core",
   "version": "1.0.0",
   "status": "active",
-  "description": "Core system entities (Admin, Permissions, Audit)",
+  "description": "Core system entities (Admin, User, Role, Permissions, Audit)",
   "dependencies": [],
   "entities": [
-    "Admin"
-  ]
+    "Admin",
+    "User",
+    "Role"
+  ],
+  "isCore": true,
+  "price": 0,
+  "priceCurrency": "EUR"
 }

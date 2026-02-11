@@ -1,0 +1,75 @@
+{
+  "entity": "Comment",
+  "module": "comments",
+  "table": "comments",
+  "fields": {
+    "id": {
+      "type": "integer",
+      "primary": true,
+      "autoIncrement": true
+    },
+    "entity_type": {
+      "type": "string",
+      "length": 50,
+      "required": true,
+      "description": "Type of entity being commented (e.g., 'article', 'product')"
+    },
+    "entity_id": {
+      "type": "integer",
+      "required": true,
+      "description": "ID of the entity being commented"
+    },
+    "user_id": {
+      "type": "integer",
+      "required": true,
+      "foreign_key": {
+        "table": "users",
+        "column": "id",
+        "onDelete": "CASCADE"
+      }
+    },
+    "content": {
+      "type": "text",
+      "required": true,
+      "translatable": true
+    },
+    "parent_id": {
+      "type": "integer",
+      "nullable": true,
+      "description": "For nested comments (replies)",
+      "foreign_key": {
+        "table": "comments",
+        "column": "id",
+        "onDelete": "CASCADE"
+      }
+    },
+    "status": {
+      "type": "enum",
+      "values": ["pending", "approved", "spam", "deleted"],
+      "default": "pending"
+    },
+    "created_at": {
+      "type": "timestamp",
+      "default": "CURRENT_TIMESTAMP"
+    },
+    "updated_at": {
+      "type": "timestamp",
+      "default": "CURRENT_TIMESTAMP",
+      "onUpdate": "CURRENT_TIMESTAMP"
+    }
+  },
+  "indexes": [
+    {
+      "name": "idx_entity",
+      "columns": ["entity_type", "entity_id"]
+    },
+    {
+      "name": "idx_user",
+      "columns": ["user_id"]
+    },
+    {
+      "name": "idx_parent",
+      "columns": ["parent_id"]
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Modules\Users\User;
+namespace App\Modules\Core\User;
 
 use App\Core\Classes\BaseController;
 use App\Core\Libraries\Encrypt;

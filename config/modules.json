@@ -3,7 +3,11 @@
         "version": "1.0.0",
         "installed_at": "2026-02-08 09:35:30"
     },
-    "users": {
+    "comments": {
+        "version": "1.0.0",
+        "installed_at": "2026-02-11 10:15:00"
+    },
+    "core": {
         "version": "1.0.0",
         "installed_at": "2026-02-08 09:35:30"
     }

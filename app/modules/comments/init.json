@@ -1,0 +1,15 @@
+{
+  "name": "comments",
+  "version": "1.0.0",
+  "status": "active",
+  "description": "Universal commenting system for articles and other entities",
+  "author": "teraCore",
+  "installDate": "2026-02-11",
+  "lastUpdated": "2026-02-11",
+  "dependencies": ["users", "articles"],
+  "entities": ["Comment"],
+  "isCore": false,
+  "price": 4.99,
+  "priceCurrency": "EUR",
+  "billingPeriod": "monthly"
+}
