@@ -90,7 +90,7 @@ GET    /api/users/{id}/modules/cost    - Calculate cost
 
 ### 1. Setup System
 ```bash
-php setup-module-permissions.php
+php scripts/setup-module-permissions.php
 ```
 
 ### 2. Login με Module Permissions
@@ -320,7 +320,7 @@ app/core/
   └── JWT.php                        # Updated με additional data
 
 app/modules/
-  ├── users/                         # Core module (free)
+  ├── core/                          # Core module (free)
   ├── articles/                      # Paid module (€9.99)
   └── comments/                      # Paid module (€4.99)
 
@@ -345,7 +345,7 @@ scripts/
 ## 🎁 Extra Features
 
 1. **Automatic Core Module Assignment**
-   - Core modules (users) are always free
+  - Core modules (core) are always free
    - Automatically excluded from billing
 
 2. **Dependency Validation**
