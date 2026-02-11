@@ -26,13 +26,12 @@ class AuthMiddleware
             return null;
         }
 
-        $payload = JWT::validateToken($token);
-
-        if (!$payload) {
+        try {
+            $payload = JWT::validateToken($token);
+            return $payload;
+        } catch (\Exception $e) {
             return null;
         }
-
-        return $payload;
     }
 
     /**
@@ -52,20 +51,19 @@ class AuthMiddleware
             ];
         }
 
-        $payload = JWT::validateToken($token);
-
-        if (!$payload) {
+        try {
+            $payload = JWT::validateToken($token);
+            return [
+                'success' => true,
+                'payload' => $payload,
+            ];
+        } catch (\Exception $e) {
             return [
                 'success' => false,
                 'error' => 'Invalid or expired token',
                 'code' => 401,
             ];
         }
-
-        return [
-            'success' => true,
-            'payload' => $payload,
-        ];
     }
 
     /**

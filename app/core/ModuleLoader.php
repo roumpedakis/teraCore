@@ -156,4 +156,138 @@ class ModuleLoader
         $module = self::getModule($moduleName);
         return $module['entities'][$entityName] ?? null;
     }
+
+    /**
+     * Get pricing information for all modules
+     */
+    public static function getModulePricing(): array
+    {
+        if (!self::$loaded) {
+            self::load();
+        }
+
+        $pricing = [];
+        foreach (self::$modules as $moduleName => $module) {
+            $metadata = $module['metadata'] ?? [];
+            $pricing[$moduleName] = [
+                'name' => $moduleName,
+                'description' => $metadata['description'] ?? '',
+                'price' => $metadata['price'] ?? 0,
+                'currency' => $metadata['priceCurrency'] ?? 'EUR',
+                'billingPeriod' => $metadata['billingPeriod'] ?? 'monthly',
+                'isCore' => $metadata['isCore'] ?? false,
+            ];
+        }
+
+        return $pricing;
+    }
+
+    /**
+     * Calculate total cost for specific modules
+     * 
+     * @param array $moduleNames Array of module names
+     * @param string $currency Currency to return (default EUR)
+     * @return array ['total' => float, 'breakdown' => array, 'currency' => string]
+     */
+    public static function calculateModuleCost(array $moduleNames, string $currency = 'EUR'): array
+    {
+        if (!self::$loaded) {
+            self::load();
+        }
+
+        $total = 0;
+        $breakdown = [];
+
+        foreach ($moduleNames as $moduleName) {
+            $module = self::$modules[$moduleName] ?? null;
+            if (!$module) {
+                continue;
+            }
+
+            $metadata = $module['metadata'] ?? [];
+            $price = $metadata['price'] ?? 0;
+            $isCore = $metadata['isCore'] ?? false;
+
+            // Core modules are always free
+            if ($isCore) {
+                $price = 0;
+            }
+
+            $breakdown[$moduleName] = [
+                'name' => $moduleName,
+                'price' => $price,
+                'currency' => $metadata['priceCurrency'] ?? 'EUR',
+                'billingPeriod' => $metadata['billingPeriod'] ?? 'monthly',
+                'isCore' => $isCore,
+            ];
+
+            $total += $price;
+        }
+
+        return [
+            'total' => $total,
+            'breakdown' => $breakdown,
+            'currency' => $currency,
+            'count' => count($breakdown),
+            'paidModules' => count(array_filter($breakdown, fn($m) => $m['price'] > 0)),
+        ];
+    }
+
+    /**
+     * Get all core modules
+     */
+    public static function getCoreModules(): array
+    {
+        if (!self::$loaded) {
+            self::load();
+        }
+
+        return array_filter(self::$modules, function ($module) {
+            return ($module['metadata']['isCore'] ?? false) === true;
+        });
+    }
+
+    /**
+     * Get all paid (non-core) modules
+     */
+    public static function getPaidModules(): array
+    {
+        if (!self::$loaded) {
+            self::load();
+        }
+
+        return array_filter(self::$modules, function ($module) {
+            $isCore = $module['metadata']['isCore'] ?? false;
+            $price = $module['metadata']['price'] ?? 0;
+            return !$isCore && $price > 0;
+        });
+    }
+
+    /**
+     * Get module dependencies
+     */
+    public static function getDependencies(string $moduleName): array
+    {
+        $module = self::getModule($moduleName);
+        return $module['metadata']['dependencies'] ?? [];
+    }
+
+    /**
+     * Validate dependencies for a module
+     * Returns array of missing dependencies
+     */
+    public static function validateDependencies(string $moduleName): array
+    {
+        $dependencies = self::getDependencies($moduleName);
+        $missing = [];
+
+        foreach ($dependencies as $dependency) {
+            if (!isset(self::$modules[$dependency])) {
+                $missing[] = $dependency;
+            }
+        }
+
+        return $missing;
+    }
 }
+

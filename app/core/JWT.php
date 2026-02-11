@@ -30,12 +30,17 @@ class JWT
      * Generate JWT access token
      * 
      * @param int $userId User ID to encode in token
-     * @param int $expiresIn Token lifetime in seconds (default 3600 = 1 hour)
+     * @param int $expiresIn Token lifetime in seconds (default from config = 8 hours)
+     * @param array $additionalData Additional payload data (e.g., modules, permissions)
      * @return string JWT token
      */
-    public static function generateToken(int $userId, int $expiresIn = 3600): string
+    public static function generateToken(int $userId, int $expiresIn = null, array $additionalData = []): string
     {
         self::initialize();
+        
+        if ($expiresIn === null) {
+            $expiresIn = (int)Config::get('JWT_EXPIRES_IN', 28800);
+        }
 
         $now = time();
         $expires = $now + $expiresIn;
@@ -47,11 +52,11 @@ class JWT
         ];
 
         // Create payload
-        $payload = [
+        $payload = array_merge([
             'user_id' => $userId,
             'iat' => $now,
             'exp' => $expires,
-        ];
+        ], $additionalData);
 
         // Encode header and payload
         $headerB64 = self::base64UrlEncode(json_encode($header));
@@ -69,12 +74,16 @@ class JWT
      * Generate refresh token (longer-lived, used to get new access tokens)
      * 
      * @param int $userId User ID
-     * @param int $expiresIn Lifetime in seconds (default 2592000 = 30 days)
+     * @param int $expiresIn Lifetime in seconds (default from config = 7 days)
      * @return string Refresh token
      */
-    public static function generateRefreshToken(int $userId, int $expiresIn = 2592000): string
+    public static function generateRefreshToken(int $userId, int $expiresIn = null): string
     {
         self::initialize();
+        
+        if ($expiresIn === null) {
+            $expiresIn = (int)Config::get('JWT_REFRESH_EXPIRES_IN', 604800);
+        }
 
         $now = time();
         $expires = $now + $expiresIn;
@@ -100,46 +109,43 @@ class JWT
      * Validate and decode JWT token
      * 
      * @param string $token JWT token to validate
-     * @return array|null Decoded payload if valid, null if invalid/expired
+     * @return array Decoded payload if valid
+     * @throws Exception if token is invalid or expired
      */
-    public static function validateToken(string $token): ?array
+    public static function validateToken(string $token): array
     {
         self::initialize();
 
-        try {
-            $parts = explode('.', $token);
-            
-            if (count($parts) !== 3) {
-                return null;
-            }
-
-            [$headerB64, $payloadB64, $signatureB64] = $parts;
-
-            // Verify signature
-            $dataToVerify = "$headerB64.$payloadB64";
-            $expectedSignature = self::sign($dataToVerify);
-            $expectedSignatureB64 = self::base64UrlEncode($expectedSignature);
-
-            if (!hash_equals($signatureB64, $expectedSignatureB64)) {
-                return null; // Invalid signature
-            }
-
-            // Decode payload
-            $payload = json_decode(self::base64UrlDecode($payloadB64), true);
-
-            if (!$payload) {
-                return null;
-            }
-
-            // Check expiry
-            if (isset($payload['exp']) && $payload['exp'] < time()) {
-                return null; // Token expired
-            }
-
-            return $payload;
-        } catch (Exception $e) {
-            return null;
+        $parts = explode('.', $token);
+        
+        if (count($parts) !== 3) {
+            throw new Exception('Invalid token format');
         }
+
+        [$headerB64, $payloadB64, $signatureB64] = $parts;
+
+        // Verify signature
+        $dataToVerify = "$headerB64.$payloadB64";
+        $expectedSignature = self::sign($dataToVerify);
+        $expectedSignatureB64 = self::base64UrlEncode($expectedSignature);
+
+        if (!hash_equals($signatureB64, $expectedSignatureB64)) {
+            throw new Exception('Invalid token signature');
+        }
+
+        // Decode payload
+        $payload = json_decode(self::base64UrlDecode($payloadB64), true);
+
+        if (!$payload) {
+            throw new Exception('Invalid token payload');
+        }
+
+        // Check expiry
+        if (isset($payload['exp']) && $payload['exp'] < time()) {
+            throw new Exception('Token has expired');
+        }
+
+        return $payload;
     }
 
     /**
