@@ -303,6 +303,153 @@ try {
     $segments = array_filter(explode('/', $pathToParse));
     $segments = array_values($segments); // Re-index after filter
     
+    // Handle module management endpoints
+    if (count($segments) >= 1 && strtolower($segments[0]) === 'modules') {
+        $moduleController = new \App\Core\ModuleController();
+        
+        // GET /api/modules - List all modules
+        if ($method === 'GET' && count($segments) === 1) {
+            $result = $moduleController->list();
+            $response->json($result);
+            exit;
+        }
+        
+        // GET /api/modules/pricing - Get pricing info
+        if ($method === 'GET' && count($segments) === 2 && $segments[1] === 'pricing') {
+            $result = $moduleController->pricing();
+            $response->json($result);
+            exit;
+        }
+        
+        $response->status(404)->json(['error' => 'Module endpoint not found']);
+        exit;
+    }
+    
+    // Handle user CRUD endpoints
+    if (count($segments) >= 1 && strtolower($segments[0]) === 'users') {
+        $userController = new \App\Core\UserController();
+        
+        // Check if it's a module-related endpoint (has /modules in path)
+        $isModuleEndpoint = count($segments) >= 3 && isset($segments[2]) && strtolower($segments[2]) === 'modules';
+        
+        // Skip to module handling if it's a module endpoint
+        if (!$isModuleEndpoint) {
+            $userId = isset($segments[1]) && is_numeric($segments[1]) ? (int)$segments[1] : null;
+            
+            // GET /api/users - List all users
+            if ($method === 'GET' && count($segments) === 1) {
+                $result = $userController->list($request->all());
+                $response->json($result);
+                exit;
+            }
+            
+            // GET /api/users/{id} - Get single user
+            if ($method === 'GET' && count($segments) === 2 && $userId) {
+                $result = $userController->get($userId);
+                $response->json($result);
+                exit;
+            }
+            
+            // POST /api/users - Create new user
+            if ($method === 'POST' && count($segments) === 1) {
+                $result = $userController->create($request->all());
+                $response->json($result);
+                exit;
+            }
+            
+            // PUT /api/users/{id} - Update user
+            if ($method === 'PUT' && count($segments) === 2 && $userId) {
+                $result = $userController->update($userId, $request->all());
+                $response->json($result);
+                exit;
+            }
+            
+            // DELETE /api/users/{id} - Delete user
+            if ($method === 'DELETE' && count($segments) === 2 && $userId) {
+                $result = $userController->delete($userId);
+                $response->json($result);
+                exit;
+            }
+            
+            // POST /api/users/{id}/toggle-status - Toggle active status
+            if ($method === 'POST' && count($segments) === 3 && $userId && strtolower($segments[2]) === 'toggle-status') {
+                $result = $userController->toggleStatus($userId);
+                $response->json($result);
+                exit;
+            }
+            
+            // POST /api/users/{id}/reset-password - Reset password
+            if ($method === 'POST' && count($segments) === 3 && $userId && strtolower($segments[2]) === 'reset-password') {
+                $result = $userController->resetPassword($userId, $request->all());
+                $response->json($result);
+                exit;
+            }
+            
+            // GET /api/users/{id}/permissions - Get user permissions
+            if ($method === 'GET' && count($segments) === 3 && $userId && strtolower($segments[2]) === 'permissions') {
+                $result = $userController->getPermissions($userId);
+                $response->json($result);
+                exit;
+            }
+            
+            // POST /api/users/{id}/permissions - Save user permissions
+            if ($method === 'POST' && count($segments) === 3 && $userId && strtolower($segments[2]) === 'permissions') {
+                $result = $userController->savePermissions($userId, $request->all());
+                $response->json($result);
+                exit;
+            }
+            
+            $response->status(404)->json(['error' => 'User endpoint not found']);
+            exit;
+        }
+    }
+    
+    // Handle user module endpoints
+    if (count($segments) >= 3 && strtolower($segments[0]) === 'users' && strtolower($segments[2]) === 'modules') {
+        $moduleController = new \App\Core\ModuleController();
+        $userId = (int)$segments[1];
+        
+        // GET /api/users/{id}/modules - Get user's modules
+        if ($method === 'GET' && count($segments) === 3) {
+            $result = $moduleController->getUserModules($userId);
+            $response->json($result);
+            exit;
+        }
+        
+        // POST /api/users/{id}/modules - Set user's modules (bulk)
+        if ($method === 'POST' && count($segments) === 3) {
+            $result = $moduleController->setUserModules($userId, $request->all());
+            $response->json($result);
+            exit;
+        }
+        
+        // GET /api/users/{id}/modules/cost - Get cost
+        if ($method === 'GET' && count($segments) === 4 && $segments[3] === 'cost') {
+            $result = $moduleController->getUserModuleCost($userId);
+            $response->json($result);
+            exit;
+        }
+        
+        // PUT /api/users/{id}/modules/{moduleName} - Update single module permission
+        if ($method === 'PUT' && count($segments) === 4) {
+            $moduleName = $segments[3];
+            $result = $moduleController->updateModulePermission($userId, $moduleName, $request->all());
+            $response->json($result);
+            exit;
+        }
+        
+        // DELETE /api/users/{id}/modules/{moduleName} - Remove module access
+        if ($method === 'DELETE' && count($segments) === 4) {
+            $moduleName = $segments[3];
+            $result = $moduleController->removeModuleAccess($userId, $moduleName);
+            $response->json($result);
+            exit;
+        }
+        
+        $response->status(404)->json(['error' => 'User module endpoint not found']);
+        exit;
+    }
+    
     // Handle auth endpoints (/api/auth/register, /api/auth/login, etc.)
     if (count($segments) >= 1 && strtolower($segments[0]) === 'auth') {
         $authAction = strtolower($segments[1] ?? '');

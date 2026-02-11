@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TeraCore Admin Login</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet" />
@@ -23,17 +24,82 @@
       <form id="admin-login-form" class="form-grid">
         <div>
           <label class="form-label" for="admin-username">Username</label>
-          <input class="form-control" id="admin-username" name="username" placeholder="admin" required />
+          <input class="form-control" id="admin-username" name="username" placeholder="admin" autocomplete="username" required />
         </div>
         <div>
           <label class="form-label" for="admin-password">Password</label>
-          <input class="form-control" id="admin-password" name="password" type="password" placeholder="admin123" required />
+          <div style="position: relative;">
+            <input class="form-control" id="admin-password" name="password" type="password" placeholder="admin123" autocomplete="current-password" style="padding-right: 40px;" required />
+            <button type="button" id="toggle-password" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; padding: 4px 8px; color: #6366f1;" aria-label="Toggle password visibility">
+              <i class="fa-solid fa-eye" id="eye-icon"></i>
+            </button>
+          </div>
         </div>
-        <p id="login-error" class="text-danger d-none">Lathos stoixia.</p>
-        <button class="btn btn-primary" type="submit">Login</button>
+        <p id="login-error" class="text-danger d-none">Λάθος στοιχεία σύνδεσης.</p>
+        <button class="btn btn-primary" type="submit" id="login-btn">Login</button>
       </form>
     </section>
   </main>
-  <script src="/admin/admin.js"></script>
+  <script>
+    // Password toggle
+    const togglePassword = document.getElementById('toggle-password');
+    const passwordInput = document.getElementById('admin-password');
+    const eyeIcon = document.getElementById('eye-icon');
+    
+    togglePassword.addEventListener('click', () => {
+      const type = passwordInput.type === 'password' ? 'text' : 'password';
+      passwordInput.type = type;
+      eyeIcon.className = type === 'password' ? 'fa-solid fa-eye' : 'fa-solid fa-eye-slash';
+    });
+
+    // Login form handler
+    const loginForm = document.getElementById('admin-login-form');
+    const loginError = document.getElementById('login-error');
+    const loginBtn = document.getElementById('login-btn');
+    
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      loginError.classList.add('d-none');
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Logging in...';
+      
+      const username = document.getElementById('admin-username').value;
+      const password = document.getElementById('admin-password').value;
+      
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            username_or_email: username,
+            password: password
+          })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.tokens) {
+          // Store token
+          localStorage.setItem('authToken', data.tokens.access_token);
+          // Redirect to dashboard
+          window.location.href = '/admin/dashboard';
+        } else {
+          loginError.textContent = data.error || 'Λάθος στοιχεία σύνδεσης.';
+          loginError.classList.remove('d-none');
+          loginBtn.disabled = false;
+          loginBtn.textContent = 'Login';
+        }
+      } catch (error) {
+        console.error('Login error:', error);
+        loginError.textContent = 'Σφάλμα σύνδεσης. Δοκιμάστε ξανά.';
+        loginError.classList.remove('d-none');
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Login';
+      }
+    });
+  </script>
 </body>
 </html>

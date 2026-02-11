@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module Management - Admin</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📦 Module Management</h1>
+            <nav>
+                <a href="/admin/dashboard">Dashboard</a>
+                <a href="/admin/users">Users</a>
+                <a href="/admin/modules" class="active">Modules</a>
+                <button id="logoutBtn" class="btn-logout">Logout</button>
+            </nav>
+        </header>
+
+        <main>
+            <!-- Module List -->
+            <section class="module-list-section">
+                <h2>Available Modules</h2>
+                <div class="module-stats">
+                    <div class="stat-card">
+                        <span class="stat-value" id="totalModules">0</span>
+                        <span class="stat-label">Total Modules</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="coreModules">0</span>
+                        <span class="stat-label">Core (Free)</span>
+                    </div>
+                    <div class="stat-card">
+                        <span class="stat-value" id="paidModules">0</span>
+                        <span class="stat-label">Paid</span>
+                    </div>
+                </div>
+
+                <div class="modules-grid" id="modulesGrid">
+                    <!-- Modules will be loaded here -->
+                </div>
+            </section>
+
+            <!-- User Module Assignment -->
+            <section class="user-modules-section">
+                <h2>User Module Assignment</h2>
+                
+                <div class="form-group">
+                    <label for="userSelect">Select User:</label>
+                    <select id="userSelect" class="form-control">
+                        <option value="">-- Select User --</option>
+                    </select>
+                </div>
+
+                <div id="userModulesContainer" style="display: none;">
+                    <h3>Assigned Modules for: <span id="selectedUsername"></span></h3>
+                    
+                    <div class="billing-info">
+                        <h4>💰 Billing Information</h4>
+                        <div class="billing-details">
+                            <span class="billing-total">Monthly Cost: <strong id="monthlyTotal">€0.00</strong></span>
+                            <span class="billing-count">Active Modules: <strong id="activeModulesCount">0</strong></span>
+                            <span class="billing-paid">Paid Modules: <strong id="paidModulesCount">0</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="user-modules-list" id="userModulesList">
+                        <!-- User modules will be loaded here -->
+                    </div>
+
+                    <button id="saveModulesBtn" class="btn btn-primary">Save Changes</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="modules.js"></script>
+</body>
+</html>
