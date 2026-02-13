@@ -23,9 +23,24 @@ http://localhost:8000
 ### Error Response
 ```json
 {
-  "error": "Error description"
+  "success": false,
+  "error": "Error description",
+  "error_code": "E1001"
 }
 ```
+
+### Error Codes
+- `E1001` AUTH_REQUIRED - Missing or invalid auth header
+- `E1002` AUTH_INVALID - Token verification failed
+- `E2001` MODULE_NOT_FOUND - Module does not exist
+- `E2002` ENTITY_NOT_FOUND - Entity does not exist in module
+- `E2003` METHOD_NOT_ALLOWED - HTTP method not allowed
+- `E2004` ADMIN_API_BLOCKED - Admin entity is not exposed via API
+- `E2005` ENDPOINT_NOT_FOUND - Route does not exist
+- `E3001` MODULE_NO_ACCESS - No access to requested module
+- `E3002` MODULE_INSUFFICIENT - Permission level is insufficient
+- `E3003` MODULE_PERMISSIONS_MISSING - Module permissions missing from token
+- `E9000` GENERIC_ERROR - Unhandled server error
 
 ## Content Type
 - All requests with body require: `Content-Type: application/json`
@@ -34,12 +49,12 @@ http://localhost:8000
 
 ---
 
-## Users Module
+## Core Users
 
 ### Endpoints
 
 #### Create User
-**POST** `/users/user`
+**POST** `/core/user`
 
 Request body:
 ```json
@@ -62,7 +77,7 @@ Response:
 ```
 
 #### Get User by ID
-**GET** `/users/user/{id}`
+**GET** `/core/user/{id}`
 
 Response:
 ```json
@@ -81,7 +96,7 @@ Response:
 Note: Password is never returned in response
 
 #### Get All Users
-**GET** `/users/user`
+**GET** `/core/user`
 
 Response:
 ```json
@@ -95,7 +110,7 @@ Response:
 ```
 
 #### Update User
-**PUT** `/users/user/{id}`
+**PUT** `/core/user/{id}`
 
 Request body:
 ```json
@@ -115,7 +130,7 @@ Response:
 ```
 
 #### Delete User
-**DELETE** `/users/user/{id}`
+**DELETE** `/core/user/{id}`
 
 Response:
 ```json
@@ -130,7 +145,7 @@ Response:
 ### Roles Endpoints
 
 #### Create Role
-**POST** `/users/role`
+**POST** `/roles`
 
 Request:
 ```json
@@ -141,16 +156,16 @@ Request:
 ```
 
 #### Get Role
-**GET** `/users/role/{id}`
+**GET** `/roles/{id}`
 
 #### Get All Roles
-**GET** `/users/role`
+**GET** `/roles`
 
 #### Update Role
-**PUT** `/users/role/{id}`
+**PUT** `/roles/{id}`
 
 #### Delete Role
-**DELETE** `/users/role/{id}`
+**DELETE** `/roles/{id}`
 
 ---
 
@@ -358,7 +373,7 @@ No CORS headers are set by default. Add middleware to enable CORS if needed.
 
 ### Create User
 ```bash
-curl -X POST http://localhost:8000/users/user \
+curl -X POST http://localhost:8000/core/user \
   -H "Content-Type: application/json" \
   -d '{
     "username": "testuser",
@@ -369,19 +384,19 @@ curl -X POST http://localhost:8000/users/user \
 
 ### Get User
 ```bash
-curl http://localhost:8000/users/user/1
+curl http://localhost:8000/core/user/1
 ```
 
 ### Update User
 ```bash
-curl -X PUT http://localhost:8000/users/user/1 \
+curl -X PUT http://localhost:8000/core/user/1 \
   -H "Content-Type: application/json" \
   -d '{"email": "newemail@example.com"}'
 ```
 
 ### Delete User
 ```bash
-curl -X DELETE http://localhost:8000/users/user/1
+curl -X DELETE http://localhost:8000/core/user/1
 ```
 
 ### Get All Articles

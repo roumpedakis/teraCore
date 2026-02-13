@@ -6,7 +6,7 @@
   "author": "teraCore",
   "installDate": "2026-02-11",
   "lastUpdated": "2026-02-11",
-  "dependencies": ["users", "articles"],
+  "dependencies": ["core", "articles"],
   "entities": ["Comment"],
   "isCore": false,
   "price": 4.99,

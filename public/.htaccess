@@ -1,3 +1,6 @@
+# Disable MultiViews to prevent content-negotiation from bypassing rewrites
+Options -MultiViews
+
 # Enable rewrite engine
 <IfModule mod_rewrite.c>
     RewriteEngine On
@@ -16,10 +19,16 @@
     RewriteCond %{THE_REQUEST} ^[A-Z]{3,}\s([^.]+)\.php [NC]
     RewriteRule ^ %1 [R=301,L]
 
-    # Admin routes - serve .html files without extension
+    # Redirect /admin to login (avoid 403 on directory without index)
+    RewriteRule ^admin/?$ /admin/login [R=302,L]
+
+    # Admin pages - force dynamic handler even if .html exists
+    RewriteRule ^admin/(login|dashboard|users|modules)(\.html)?$ index.php [L,QSA]
+
+    # Admin routes - forward to index.php for auth/session handling
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^admin/([a-z]+)$ admin/$1.html [L]
+    RewriteRule ^admin/(.*)$ index.php [L,QSA]
 
     # Serve .php files for URLs without extension (for admin backend)
     RewriteCond %{REQUEST_FILENAME} !-f

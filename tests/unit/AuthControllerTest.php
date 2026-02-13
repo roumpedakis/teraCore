@@ -6,7 +6,7 @@ use TestCase;
 use App\Core\AuthController;
 use App\Core\JWT;
 use App\Core\Database;
-use App\Modules\Users\User\Repository as UserRepository;
+use App\Modules\Core\User\Repository as UserRepository;
 
 class FakeAuthDatabase extends Database
 {

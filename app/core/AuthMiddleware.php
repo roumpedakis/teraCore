@@ -48,6 +48,7 @@ class AuthMiddleware
                 'success' => false,
                 'error' => 'Authorization required',
                 'code' => 401,
+                'error_code' => ErrorCodes::AUTH_REQUIRED,
             ];
         }
 
@@ -62,6 +63,7 @@ class AuthMiddleware
                 'success' => false,
                 'error' => 'Invalid or expired token',
                 'code' => 401,
+                'error_code' => ErrorCodes::AUTH_INVALID,
             ];
         }
     }
@@ -93,6 +95,7 @@ class AuthMiddleware
             'success' => false,
             'error' => 'Unauthorized',
             'code' => 401,
+            'error_code' => ErrorCodes::AUTH_REQUIRED,
         ];
     }
 
@@ -106,6 +109,7 @@ class AuthMiddleware
             'success' => false,
             'error' => 'Forbidden',
             'code' => 403,
+            'error_code' => ErrorCodes::MODULE_NO_ACCESS,
         ];
     }
 }

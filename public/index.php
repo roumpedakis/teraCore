@@ -9,6 +9,8 @@ use App\Core\ModuleLoader;
 use App\Core\Factory;
 use App\Core\AuthController;
 use App\Core\AuthMiddleware;
+use App\Core\ModuleAccessMiddleware;
+use App\Core\ErrorCodes;
 use App\Core\ApiDocumentation;
 use App\Core\SecurityMiddleware;
 use App\Core\Handlers\SessionHandler;
@@ -41,6 +43,13 @@ try {
     // Create request and response objects
     $request = new Request();
     $response = new Response();
+
+    $withErrorCode = function (array $payload, string $code = ErrorCodes::GENERIC_ERROR): array {
+        if (isset($payload['error']) && empty($payload['error_code'])) {
+            $payload['error_code'] = $code;
+        }
+        return $payload;
+    };
     
     // Route format: /api/module/entity/action or /api/module/entity/:id
     $path = $request->path();
@@ -275,7 +284,9 @@ try {
         $routeMap = [
             '/login' => '/admin/login.php',
             '/dashboard' => '/admin/dashboard.php',
-            '/users' => '/admin/users.php'
+            '/users' => '/admin/users.php',
+            '/modules' => '/admin/modules.php',
+            '/permissions' => '/admin/permissions.php'
         ];
 
         $target = $routeMap[$adminPath] ?? '/admin/login.php';
@@ -310,6 +321,9 @@ try {
         // GET /api/modules - List all modules
         if ($method === 'GET' && count($segments) === 1) {
             $result = $moduleController->list();
+            if (is_array($result)) {
+                $result = $withErrorCode($result);
+            }
             $response->json($result);
             exit;
         }
@@ -317,11 +331,73 @@ try {
         // GET /api/modules/pricing - Get pricing info
         if ($method === 'GET' && count($segments) === 2 && $segments[1] === 'pricing') {
             $result = $moduleController->pricing();
+            if (is_array($result)) {
+                $result = $withErrorCode($result);
+            }
             $response->json($result);
             exit;
         }
         
-        $response->status(404)->json(['error' => 'Module endpoint not found']);
+        $response->status(404)->json($withErrorCode([
+            'error' => 'Module endpoint not found'
+        ], ErrorCodes::ENDPOINT_NOT_FOUND));
+        exit;
+    }
+
+    // Handle roles endpoints
+    if (count($segments) >= 1 && strtolower($segments[0]) === 'roles') {
+        $roleController = new \App\Core\RoleAdminController();
+
+        $roleId = isset($segments[1]) && is_numeric($segments[1]) ? (int)$segments[1] : null;
+
+        if ($method === 'GET' && count($segments) === 1) {
+            $result = $roleController->list($request->all());
+            if (is_array($result)) {
+                $result = $withErrorCode($result);
+            }
+            $response->json($result);
+            exit;
+        }
+
+        if ($method === 'GET' && count($segments) === 2 && $roleId) {
+            $result = $roleController->get($roleId);
+            if (is_array($result)) {
+                $result = $withErrorCode($result);
+            }
+            $response->json($result);
+            exit;
+        }
+
+        if ($method === 'POST' && count($segments) === 1) {
+            $result = $roleController->create($request->all());
+            if (is_array($result)) {
+                $result = $withErrorCode($result);
+            }
+            $response->json($result);
+            exit;
+        }
+
+        if ($method === 'PUT' && count($segments) === 2 && $roleId) {
+            $result = $roleController->update($roleId, $request->all());
+            if (is_array($result)) {
+                $result = $withErrorCode($result);
+            }
+            $response->json($result);
+            exit;
+        }
+
+        if ($method === 'DELETE' && count($segments) === 2 && $roleId) {
+            $result = $roleController->delete($roleId);
+            if (is_array($result)) {
+                $result = $withErrorCode($result);
+            }
+            $response->json($result);
+            exit;
+        }
+
+        $response->status(404)->json($withErrorCode([
+            'error' => 'Role endpoint not found'
+        ], ErrorCodes::ENDPOINT_NOT_FOUND));
         exit;
     }
     
@@ -339,6 +415,9 @@ try {
             // GET /api/users - List all users
             if ($method === 'GET' && count($segments) === 1) {
                 $result = $userController->list($request->all());
+                if (is_array($result)) {
+                    $result = $withErrorCode($result);
+                }
                 $response->json($result);
                 exit;
             }
@@ -346,6 +425,9 @@ try {
             // GET /api/users/{id} - Get single user
             if ($method === 'GET' && count($segments) === 2 && $userId) {
                 $result = $userController->get($userId);
+                if (is_array($result)) {
+                    $result = $withErrorCode($result);
+                }
                 $response->json($result);
                 exit;
             }
@@ -353,6 +435,9 @@ try {
             // POST /api/users - Create new user
             if ($method === 'POST' && count($segments) === 1) {
                 $result = $userController->create($request->all());
+                if (is_array($result)) {
+                    $result = $withErrorCode($result);
+                }
                 $response->json($result);
                 exit;
             }
@@ -360,6 +445,9 @@ try {
             // PUT /api/users/{id} - Update user
             if ($method === 'PUT' && count($segments) === 2 && $userId) {
                 $result = $userController->update($userId, $request->all());
+                if (is_array($result)) {
+                    $result = $withErrorCode($result);
+                }
                 $response->json($result);
                 exit;
             }
@@ -367,6 +455,9 @@ try {
             // DELETE /api/users/{id} - Delete user
             if ($method === 'DELETE' && count($segments) === 2 && $userId) {
                 $result = $userController->delete($userId);
+                if (is_array($result)) {
+                    $result = $withErrorCode($result);
+                }
                 $response->json($result);
                 exit;
             }
@@ -374,6 +465,9 @@ try {
             // POST /api/users/{id}/toggle-status - Toggle active status
             if ($method === 'POST' && count($segments) === 3 && $userId && strtolower($segments[2]) === 'toggle-status') {
                 $result = $userController->toggleStatus($userId);
+                if (is_array($result)) {
+                    $result = $withErrorCode($result);
+                }
                 $response->json($result);
                 exit;
             }
@@ -381,6 +475,9 @@ try {
             // POST /api/users/{id}/reset-password - Reset password
             if ($method === 'POST' && count($segments) === 3 && $userId && strtolower($segments[2]) === 'reset-password') {
                 $result = $userController->resetPassword($userId, $request->all());
+                if (is_array($result)) {
+                    $result = $withErrorCode($result);
+                }
                 $response->json($result);
                 exit;
             }
@@ -388,6 +485,9 @@ try {
             // GET /api/users/{id}/permissions - Get user permissions
             if ($method === 'GET' && count($segments) === 3 && $userId && strtolower($segments[2]) === 'permissions') {
                 $result = $userController->getPermissions($userId);
+                if (is_array($result)) {
+                    $result = $withErrorCode($result);
+                }
                 $response->json($result);
                 exit;
             }
@@ -395,11 +495,16 @@ try {
             // POST /api/users/{id}/permissions - Save user permissions
             if ($method === 'POST' && count($segments) === 3 && $userId && strtolower($segments[2]) === 'permissions') {
                 $result = $userController->savePermissions($userId, $request->all());
+                if (is_array($result)) {
+                    $result = $withErrorCode($result);
+                }
                 $response->json($result);
                 exit;
             }
             
-            $response->status(404)->json(['error' => 'User endpoint not found']);
+            $response->status(404)->json($withErrorCode([
+                'error' => 'User endpoint not found'
+            ], ErrorCodes::ENDPOINT_NOT_FOUND));
             exit;
         }
     }
@@ -412,6 +517,9 @@ try {
         // GET /api/users/{id}/modules - Get user's modules
         if ($method === 'GET' && count($segments) === 3) {
             $result = $moduleController->getUserModules($userId);
+            if (is_array($result)) {
+                $result = $withErrorCode($result);
+            }
             $response->json($result);
             exit;
         }
@@ -419,6 +527,9 @@ try {
         // POST /api/users/{id}/modules - Set user's modules (bulk)
         if ($method === 'POST' && count($segments) === 3) {
             $result = $moduleController->setUserModules($userId, $request->all());
+            if (is_array($result)) {
+                $result = $withErrorCode($result);
+            }
             $response->json($result);
             exit;
         }
@@ -426,6 +537,9 @@ try {
         // GET /api/users/{id}/modules/cost - Get cost
         if ($method === 'GET' && count($segments) === 4 && $segments[3] === 'cost') {
             $result = $moduleController->getUserModuleCost($userId);
+            if (is_array($result)) {
+                $result = $withErrorCode($result);
+            }
             $response->json($result);
             exit;
         }
@@ -434,6 +548,9 @@ try {
         if ($method === 'PUT' && count($segments) === 4) {
             $moduleName = $segments[3];
             $result = $moduleController->updateModulePermission($userId, $moduleName, $request->all());
+            if (is_array($result)) {
+                $result = $withErrorCode($result);
+            }
             $response->json($result);
             exit;
         }
@@ -442,11 +559,16 @@ try {
         if ($method === 'DELETE' && count($segments) === 4) {
             $moduleName = $segments[3];
             $result = $moduleController->removeModuleAccess($userId, $moduleName);
+            if (is_array($result)) {
+                $result = $withErrorCode($result);
+            }
             $response->json($result);
             exit;
         }
         
-        $response->status(404)->json(['error' => 'User module endpoint not found']);
+        $response->status(404)->json($withErrorCode([
+            'error' => 'User module endpoint not found'
+        ], ErrorCodes::ENDPOINT_NOT_FOUND));
         exit;
     }
     
@@ -459,7 +581,9 @@ try {
         switch ($authAction) {
             case 'register':
                 if ($method !== 'POST') {
-                    $response->status(405)->json(['error' => 'Method not allowed']);
+                    $response->status(405)->json($withErrorCode([
+                        'error' => 'Method not allowed'
+                    ], ErrorCodes::METHOD_NOT_ALLOWED));
                     exit;
                 }
                 $result = $authController->register($request->all());
@@ -467,7 +591,9 @@ try {
                 
             case 'login':
                 if ($method !== 'POST') {
-                    $response->status(405)->json(['error' => 'Method not allowed']);
+                    $response->status(405)->json($withErrorCode([
+                        'error' => 'Method not allowed'
+                    ], ErrorCodes::METHOD_NOT_ALLOWED));
                     exit;
                 }
                 $result = $authController->login($request->all());
@@ -475,7 +601,9 @@ try {
                 
             case 'refresh':
                 if ($method !== 'POST') {
-                    $response->status(405)->json(['error' => 'Method not allowed']);
+                    $response->status(405)->json($withErrorCode([
+                        'error' => 'Method not allowed'
+                    ], ErrorCodes::METHOD_NOT_ALLOWED));
                     exit;
                 }
                 $result = $authController->refresh($request->all());
@@ -483,7 +611,9 @@ try {
                 
             case 'logout':
                 if ($method !== 'POST') {
-                    $response->status(405)->json(['error' => 'Method not allowed']);
+                    $response->status(405)->json($withErrorCode([
+                        'error' => 'Method not allowed'
+                    ], ErrorCodes::METHOD_NOT_ALLOWED));
                     exit;
                 }
                 $result = $authController->logout($request->all());
@@ -491,7 +621,9 @@ try {
                 
             case 'verify':
                 if ($method !== 'GET') {
-                    $response->status(405)->json(['error' => 'Method not allowed']);
+                    $response->status(405)->json($withErrorCode([
+                        'error' => 'Method not allowed'
+                    ], ErrorCodes::METHOD_NOT_ALLOWED));
                     exit;
                 }
                 // Extract token from Authorization header
@@ -501,29 +633,41 @@ try {
                     $token = $matches[1];
                 }
                 if (!$token) {
-                    $response->status(401)->json(['success' => false, 'error' => 'No token provided']);
+                    $response->status(401)->json([
+                        'success' => false,
+                        'error' => 'No token provided',
+                        'error_code' => ErrorCodes::AUTH_REQUIRED,
+                    ]);
                     exit;
                 }
                 $result = $authController->verify($token);
                 // Return 401 if token is invalid
                 if (isset($result['success']) && !$result['success']) {
-                    $response->status(401)->json($result);
+                    $response->status(401)->json($withErrorCode($result, ErrorCodes::AUTH_INVALID));
                     exit;
                 }
                 break;
                 
             default:
-                $response->status(404)->json(['error' => 'Auth endpoint not found']);
+                $response->status(404)->json($withErrorCode([
+                    'error' => 'Auth endpoint not found'
+                ], ErrorCodes::ENDPOINT_NOT_FOUND));
                 exit;
         }
-        
+
+        if (is_array($result)) {
+            $result = $withErrorCode($result);
+        }
+
         $response->json($result);
         exit;
     }
     
     if (count($segments) < 2) {
         Logger::warning("Not enough segments in path", ['segments' => $segments]);
-        $response->status(404)->json(['error' => 'Not found']);
+        $response->status(404)->json($withErrorCode([
+            'error' => 'Not found'
+        ], ErrorCodes::ENDPOINT_NOT_FOUND));
         exit;
     }
     
@@ -545,13 +689,14 @@ try {
     if (strtolower($moduleName) === 'core' && strtolower($entityName) === 'admin') {
         $response->status(403)->json([
             'success' => false,
-            'error' => 'Admin entity is not accessible via API'
+            'error' => 'Admin entity is not accessible via API',
+            'error_code' => ErrorCodes::ADMIN_API_BLOCKED,
         ]);
         exit;
     }
     
     // Users entity - Limited endpoints
-    if (strtolower($moduleName) === 'users' && strtolower($entityName) === 'user') {
+    if (strtolower($moduleName) === 'core' && strtolower($entityName) === 'user') {
         // Only allow: GET (read) and PUT (update own info)
         // Block: POST (create) and DELETE (delete)
         $allowed_methods = ['GET'];
@@ -559,7 +704,8 @@ try {
         if ($method === 'POST' || $method === 'DELETE') {
             $response->status(403)->json([
                 'success' => false,
-                'error' => "Method {$method} not allowed for User entity via API. Only GET and PUT are supported."
+                'error' => "Method {$method} not allowed for User entity via API. Only GET and PUT are supported.",
+                'error_code' => ErrorCodes::METHOD_NOT_ALLOWED,
             ]);
             exit;
         }
@@ -568,7 +714,8 @@ try {
         if (!in_array($method, ['GET', 'PUT'])) {
             $response->status(405)->json([
                 'success' => false,
-                'error' => "Method not allowed"
+                'error' => "Method not allowed",
+                'error_code' => ErrorCodes::METHOD_NOT_ALLOWED,
             ]);
             exit;
         }
@@ -581,14 +728,41 @@ try {
     $module = ModuleLoader::getModule($moduleName);
     if (!$module) {
         Logger::warning("Module not found", ['moduleName' => $moduleName]);
-        $response->status(404)->json(['error' => 'Module not found']);
+        $response->status(404)->json($withErrorCode([
+            'error' => 'Module not found'
+        ], ErrorCodes::MODULE_NOT_FOUND));
         exit;
     }
     
     $entity = ModuleLoader::getEntity($moduleName, $entityName);
     if (!$entity) {
-        $response->status(404)->json(['error' => 'Entity not found']);
+        $response->status(404)->json($withErrorCode([
+            'error' => 'Entity not found'
+        ], ErrorCodes::ENTITY_NOT_FOUND));
         exit;
+    }
+
+    // Enforce API permissions based on module access (user-only permissions)
+    if (strtolower($moduleName) !== 'core') {
+        $access = ModuleAccessMiddleware::checkAccessByMethod($moduleName, $method);
+        if (!($access['success'] ?? false)) {
+            $response->status($access['code'] ?? 403)->json([
+                'success' => false,
+                'error' => $access['error'] ?? 'Forbidden',
+                'error_code' => $access['error_code'] ?? ErrorCodes::MODULE_NO_ACCESS,
+            ]);
+            exit;
+        }
+    } else {
+        $auth = AuthMiddleware::require();
+        if (!($auth['success'] ?? false)) {
+            $response->status($auth['code'] ?? 401)->json([
+                'success' => false,
+                'error' => $auth['error'] ?? 'Unauthorized',
+                'error_code' => $auth['error_code'] ?? ErrorCodes::AUTH_REQUIRED,
+            ]);
+            exit;
+        }
     }
     
     // Create controller
@@ -605,7 +779,9 @@ try {
     $actionName = $actionMap[$method] ?? null;
     
     if (!$actionName || !method_exists($controller, $actionName)) {
-        $response->status(405)->json(['error' => 'Method not allowed']);
+        $response->status(405)->json($withErrorCode([
+            'error' => 'Method not allowed'
+        ], ErrorCodes::METHOD_NOT_ALLOWED));
         exit;
     }
     
@@ -616,6 +792,9 @@ try {
         $result = $controller->$actionName($request->all());
     }
     
+    if (is_array($result)) {
+        $result = $withErrorCode($result);
+    }
     $response->json($result);
     
 } catch (\Exception $e) {
@@ -628,6 +807,8 @@ try {
     http_response_code(500);
     header('Content-Type: application/json');
     echo json_encode([
-        'error' => Config::get('APP_DEBUG') ? $e->getMessage() : 'Internal server error'
+        'success' => false,
+        'error' => Config::get('APP_DEBUG') ? $e->getMessage() : 'Internal server error',
+        'error_code' => ErrorCodes::GENERIC_ERROR,
     ]);
 }

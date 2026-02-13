@@ -7,12 +7,20 @@ namespace Tests\Integration;
  */
 class ApiTest
 {
-    protected string $baseUrl = 'http://localhost:8000/api';
+    protected string $baseUrl;
     protected string $accessToken = '';
     protected string $refreshToken = '';
     protected int $testUserId = 0;
     protected int $testArticleId = 0;
     protected int $firstArticleId = 0;
+    protected int $noAuthStatus = 0;
+    protected string $loginUsername = 'postman_test';
+    protected string $loginPassword = 'PostmanTest123';
+
+    public function __construct()
+    {
+        $this->baseUrl = getenv('API_BASE_URL') ?: 'http://localhost:8000/api';
+    }
 
     /**
      * Helper: Make HTTP request
@@ -40,23 +48,40 @@ class ApiTest
         }
         
         $response = curl_exec($ch);
+        $httpcode = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
 
         $decoded = json_decode($response, true);
         if (json_last_error() === JSON_ERROR_NONE) {
             if (is_array($decoded)) {
+                $decoded['_status'] = $httpcode;
                 return $decoded;
             }
             if (is_string($decoded)) {
                 $decodedTwice = json_decode($decoded, true);
                 if (json_last_error() === JSON_ERROR_NONE && is_array($decodedTwice)) {
+                    $decodedTwice['_status'] = $httpcode;
                     return $decodedTwice;
                 }
             }
-            return ['_value' => $decoded];
+            return ['_value' => $decoded, '_status' => $httpcode];
         }
 
-        return ['_raw' => $response];
+        return ['_raw' => $response, '_status' => $httpcode];
+    }
+
+    private function authHeaders(): array
+    {
+        return ['Authorization' => 'Bearer ' . $this->accessToken];
+    }
+
+    private function setUserModules(array $modules): void
+    {
+        $response = $this->request('POST', "/users/{$this->testUserId}/modules", [
+            'modules' => $modules
+        ]);
+
+        $this->assertTrue($response['success'] ?? false, 'Setting user modules should succeed');
     }
 
     /**
@@ -87,8 +112,8 @@ class ApiTest
         echo "\n✓ TEST: User Login\n";
         
         $response = $this->request('POST', '/auth/login', [
-            'username_or_email' => 'postman_test',
-            'password' => 'PostmanTest123'
+            'username_or_email' => $this->loginUsername,
+            'password' => $this->loginPassword
         ]);
         
         $this->assertTrue($response['success'] ?? false, 'Login should succeed');
@@ -104,15 +129,38 @@ class ApiTest
     }
 
     /**
+     * Test 2b: Assign Module Access
+     */
+    public function test_assign_module_access(): void
+    {
+        echo "\n✓ TEST: Assign Module Access\n";
+
+        $this->setUserModules([
+            'articles' => 15
+        ]);
+
+        $response = $this->request('POST', '/auth/login', [
+            'username_or_email' => $this->loginUsername,
+            'password' => $this->loginPassword
+        ]);
+
+        $this->assertTrue($response['success'] ?? false, 'Login should succeed after module assignment');
+        $this->assertNotEmpty($response['tokens']['access_token'] ?? null, 'Should return access token');
+
+        $this->accessToken = $response['tokens']['access_token'];
+        $this->refreshToken = $response['tokens']['refresh_token'];
+
+        echo "  Module access assigned and token refreshed\n";
+    }
+
+    /**
      * Test 3: Verify Token
      */
     public function test_verify_token(): void
     {
         echo "\n✓ TEST: Verify Token\n";
         
-        $response = $this->request('GET', '/auth/verify', [], [
-            'Authorization' => 'Bearer ' . $this->accessToken
-        ]);
+        $response = $this->request('GET', '/auth/verify', [], $this->authHeaders());
         
         $this->assertTrue($response['success'] ?? false, 'Token verification should succeed');
         $this->assertNotEmpty($response['data']['user_id'] ?? null, 'Should return user info');
@@ -146,13 +194,26 @@ class ApiTest
     }
 
     /**
-     * Test 6: Get Articles (Public - No Auth)
+     * Test 6: Articles Require Auth
+     */
+    public function test_articles_require_auth(): void
+    {
+        echo "\n✓ TEST: Articles Require Auth\n";
+
+        $response = $this->request('GET', '/articles/article');
+
+        $this->assertStatus(401, $response, 'Articles should require auth');
+        $this->assertErrorCode('E1001', $response, 'Auth required error expected');
+    }
+
+    /**
+     * Test 6: Get Articles (Auth)
      */
     public function test_get_articles_public(): void
     {
-        echo "\n✓ TEST: Get Articles (Public)\n";
+        echo "\n✓ TEST: Get Articles (Auth)\n";
         
-        $response = $this->request('GET', '/articles/article');
+        $response = $this->request('GET', '/articles/article', [], $this->authHeaders());
 
         $list = $this->getListData($response);
         $this->assertNotEmpty($list['data'], 'Should return articles array');
@@ -170,7 +231,7 @@ class ApiTest
     {
         echo "\n✓ TEST: Get Single Article\n";
         
-        $response = $this->request('GET', "/articles/article/{$this->testArticleId}");
+        $response = $this->request('GET', "/articles/article/{$this->testArticleId}", [], $this->authHeaders());
         
         $this->assertNotEmpty($response['id'] ?? null, 'Should return article data');
         $this->assertEqual($this->testArticleId, $response['id'], 'Should return correct article');
@@ -185,7 +246,7 @@ class ApiTest
     {
         echo "\n✓ TEST: Articles Pagination\n";
 
-        $response = $this->request('GET', '/articles/article?limit=1&offset=0&orderBy=id&order=DESC');
+        $response = $this->request('GET', '/articles/article?limit=1&offset=0&orderBy=id&order=DESC', [], $this->authHeaders());
         $list = $this->getListData($response);
 
         $this->assertNotEmpty($list['data'], 'Should return at least 1 article');
@@ -210,7 +271,7 @@ class ApiTest
             throw new \Exception('No article ID available for filtering');
         }
 
-        $response = $this->request('GET', "/articles/article?id={$this->firstArticleId}");
+        $response = $this->request('GET', "/articles/article?id={$this->firstArticleId}", [], $this->authHeaders());
         $list = $this->getListData($response);
 
         $this->assertNotEmpty($list['data'], 'Should return filtered article');
@@ -228,7 +289,7 @@ class ApiTest
     {
         echo "\n✓ TEST: Order Articles Desc\n";
 
-        $response = $this->request('GET', '/articles/article?orderBy=id&order=DESC&limit=2');
+        $response = $this->request('GET', '/articles/article?orderBy=id&order=DESC&limit=2', [], $this->authHeaders());
         $list = $this->getListData($response);
 
         if (count($list['data']) >= 2) {
@@ -238,6 +299,49 @@ class ApiTest
         }
 
         echo "  Ordering OK\n";
+    }
+
+    /**
+     * Test 7e: Comments Require Purchase
+     */
+    public function test_comments_no_access(): void
+    {
+        echo "\n✓ TEST: Comments Require Purchase\n";
+
+        $response = $this->request('GET', '/comments/comment', [], $this->authHeaders());
+
+        $this->assertStatus(403, $response, 'Comments should be forbidden without purchase');
+        $this->assertErrorCode('E3001', $response, 'No access error expected');
+    }
+
+    /**
+     * Test 7f: Articles Create Requires Permission
+     */
+    public function test_articles_create_insufficient(): void
+    {
+        echo "\n✓ TEST: Articles Create Requires Permission\n";
+
+        $permissionResponse = $this->request('PUT', "/users/{$this->testUserId}/modules/articles", [
+            'permission' => 1
+        ]);
+
+        $this->assertTrue($permissionResponse['success'] ?? false, 'Permission update should succeed');
+
+        $response = $this->request('POST', '/auth/login', [
+            'username_or_email' => $this->loginUsername,
+            'password' => $this->loginPassword
+        ]);
+
+        $this->assertTrue($response['success'] ?? false, 'Login should succeed after permission update');
+        $this->accessToken = $response['tokens']['access_token'];
+
+        $createResponse = $this->request('POST', '/articles/article', [
+            'title' => 'Test Article',
+            'content' => 'Test content'
+        ], $this->authHeaders());
+
+        $this->assertStatus(403, $createResponse, 'Create should be blocked without create permission');
+        $this->assertErrorCode('E3002', $createResponse, 'Insufficient permission error expected');
     }
 
     /**
@@ -257,9 +361,7 @@ class ApiTest
     {
         echo "\n✓ TEST: Get User Profile\n";
         
-        $response = $this->request('GET', "/users/user/{$this->testUserId}", [], [
-            'Authorization' => 'Bearer ' . $this->accessToken
-        ]);
+        $response = $this->request('GET', "/core/user/{$this->testUserId}", [], $this->authHeaders());
         
         $this->assertNotEmpty($response['id'] ?? null, 'Should return user data');
         $this->assertEqual($this->testUserId, $response['id'], 'Should return correct user');
@@ -277,13 +379,11 @@ class ApiTest
         
         $newEmail = 'updated_' . time() . '@test.com';
         
-        $response = $this->request('PUT', "/users/user/{$this->testUserId}", [
+        $response = $this->request('PUT', "/core/user/{$this->testUserId}", [
             'first_name' => 'John',
             'last_name' => 'Updated',
             'email' => $newEmail
-        ], [
-            'Authorization' => 'Bearer ' . $this->accessToken
-        ]);
+        ], $this->authHeaders());
 
         if (!($response['success'] ?? false)) {
             $details = json_encode($response);
@@ -303,12 +403,11 @@ class ApiTest
         $response = $this->request('POST', '/core/admin', [
             'name' => 'Test Admin',
             'status' => 'active'
-        ], [
-            'Authorization' => 'Bearer ' . $this->accessToken
-        ]);
+        ], $this->authHeaders());
         
         $this->assertTrue($response['success'] === false, 'Admin should be blocked');
         $this->assertContains('not accessible', $response['error'] ?? '', 'Should show access error');
+        $this->assertErrorCode('E2004', $response, 'Admin blocked error expected');
         
         echo "  Admin correctly blocked: " . ($response['error'] ?? 'Unknown error') . "\n";
     }
@@ -320,16 +419,15 @@ class ApiTest
     {
         echo "\n✓ TEST: User Create Blocked\n";
         
-        $response = $this->request('POST', '/users/user', [
+        $response = $this->request('POST', '/core/user', [
             'username' => 'newuser',
             'email' => 'newuser@test.com',
             'password' => 'password123'
-        ], [
-            'Authorization' => 'Bearer ' . $this->accessToken
-        ]);
+        ], $this->authHeaders());
         
         $this->assertTrue($response['success'] === false, 'User create should be blocked');
         $this->assertContains('not allowed', $response['error'] ?? '', 'Should show method error');
+        $this->assertErrorCode('E2003', $response, 'Method not allowed error expected');
         
         echo "  User create correctly blocked: " . ($response['error'] ?? 'Unknown error') . "\n";
     }
@@ -341,12 +439,11 @@ class ApiTest
     {
         echo "\n✓ TEST: User Delete Blocked\n";
         
-        $response = $this->request('DELETE', "/users/user/{$this->testUserId}", [], [
-            'Authorization' => 'Bearer ' . $this->accessToken
-        ]);
+        $response = $this->request('DELETE', "/core/user/{$this->testUserId}", [], $this->authHeaders());
         
         $this->assertTrue($response['success'] === false, 'User delete should be blocked');
         $this->assertContains('not allowed', $response['error'] ?? '', 'Should show method error');
+        $this->assertErrorCode('E2003', $response, 'Method not allowed error expected');
         
         echo "  User delete correctly blocked: " . ($response['error'] ?? 'Unknown error') . "\n";
     }
@@ -363,6 +460,8 @@ class ApiTest
         ]);
         
         $this->assertTrue($response['success'] === false, 'Invalid token should fail');
+        $this->assertStatus(401, $response, 'Invalid token should return 401');
+        $this->assertErrorCode('E1002', $response, 'Invalid token error expected');
         
         echo "  Invalid token correctly rejected\n";
     }
@@ -386,9 +485,7 @@ class ApiTest
         
         $response = $this->request('POST', '/auth/logout', [
             'user_id' => $this->testUserId
-        ], [
-            'Authorization' => 'Bearer ' . $this->accessToken
-        ]);
+        ], $this->authHeaders());
         
         $this->assertTrue($response['success'] ?? false, 'Logout should succeed');
         
@@ -473,6 +570,28 @@ class ApiTest
     private function isAssoc(array $data): bool
     {
         return array_keys($data) !== range(0, count($data) - 1);
+    }
+
+    /**
+     * Helper: Assert status code
+     */
+    private function assertStatus(int $expected, array $response, string $message = ''): void
+    {
+        $actual = (int)($response['_status'] ?? 0);
+        if ($expected !== $actual) {
+            throw new \Exception("Assertion failed: {$message} (expected {$expected}, got {$actual})");
+        }
+    }
+
+    /**
+     * Helper: Assert error code
+     */
+    private function assertErrorCode(string $expected, array $response, string $message = ''): void
+    {
+        $actual = (string)($response['error_code'] ?? '');
+        if ($expected !== $actual) {
+            throw new \Exception("Assertion failed: {$message} (expected {$expected}, got {$actual})");
+        }
     }
 
     /**

@@ -57,3 +57,24 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+window.showAdminModal = function showAdminModal(message, variant) {
+  const modalEl = document.getElementById('admin-feedback-modal');
+  const bodyEl = document.getElementById('admin-feedback-body');
+  const titleEl = document.getElementById('admin-feedback-title');
+
+  if (!modalEl || !bodyEl || !titleEl || !window.bootstrap) {
+    alert(message);
+    return;
+  }
+
+  const isError = variant === 'error';
+  titleEl.textContent = isError ? 'Error' : 'Success';
+  bodyEl.textContent = message;
+
+  modalEl.classList.remove('modal-success', 'modal-error');
+  modalEl.classList.add(isError ? 'modal-error' : 'modal-success');
+
+  const modal = window.bootstrap.Modal.getOrCreateInstance(modalEl);
+  modal.show();
+};

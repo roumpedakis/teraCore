@@ -21,15 +21,28 @@ class Parser
      */
     public static function parseXml(string $input): array
     {
-        try {
-            $xml = simplexml_load_string($input);
-            if ($xml === false) {
-                throw new \InvalidArgumentException('Invalid XML');
+        $previous = libxml_use_internal_errors(true);
+        libxml_clear_errors();
+
+        $xml = simplexml_load_string($input, 'SimpleXMLElement', LIBXML_NONET);
+
+        if ($xml === false) {
+            $errors = libxml_get_errors();
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+
+            $message = 'Invalid XML';
+            if (!empty($errors)) {
+                $message = trim($errors[0]->message);
             }
-            return json_decode(json_encode($xml), true);
-        } catch (\Exception $e) {
-            throw new \InvalidArgumentException('XML parsing error: ' . $e->getMessage());
+
+            throw new \InvalidArgumentException('XML parsing error: ' . $message);
         }
+
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        return json_decode(json_encode($xml), true);
     }
 
     /**

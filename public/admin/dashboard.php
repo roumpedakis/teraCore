@@ -28,8 +28,9 @@ $adminUser = $adminUser ?? [];
       <nav class="nav-list">
         <a class="nav-link" href="/admin/dashboard"><i class="fa-solid fa-chart-line"></i> Πίνακας</a>
         <a class="nav-link" href="/admin/users"><i class="fa-solid fa-users"></i> Χρήστες</a>
+        <a class="nav-link" href="/admin/modules"><i class="fa-solid fa-cubes"></i> Modules</a>
         <a class="nav-link" href="/admin/dashboard#admins"><i class="fa-solid fa-user-shield"></i> Διαχειριστές</a>
-        <a class="nav-link" href="/admin/dashboard#permissions"><i class="fa-solid fa-key"></i> Δικαιώματα</a>
+        <a class="nav-link" href="/admin/permissions"><i class="fa-solid fa-key"></i> Δικαιώματα</a>
         <a class="btn btn-ghost mt-3" href="/admin/logout"><i class="fa-solid fa-right-from-bracket me-2" title="Αποσύνδεση"></i>Αποσύνδεση</a>
       </nav>
     </aside>
@@ -144,11 +145,11 @@ $adminUser = $adminUser ?? [];
         <div class="d-flex justify-content-between align-items-center mb-3">
           <div>
             <h2 class="mb-1">Χάρτης Δικαιωμάτων</h2>
-            <p class="subtitle">Διαχείριση δικαιωμάτων ανά ρόλο.</p>
+            <p class="subtitle">Διαχείριση δικαιωμάτων ανά χρήστη και ρόλο.</p>
           </div>
-          <button class="btn btn-ghost" type="button" disabled>Σύντομα</button>
+          <a class="btn btn-ghost" href="/admin/permissions">Άνοιγμα</a>
         </div>
-        <p class="subtitle">Ο χάρτης δικαιωμάτων θα συνδεθεί σε πραγματικά δεδομένα μόλις ολοκληρωθούν οι ρόλοι.</p>
+        <p class="subtitle">Χρησιμοποίησε το Permissions για ρόλους και module permissions.</p>
       </section>
     </main>
   </div>

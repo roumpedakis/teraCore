@@ -10,24 +10,24 @@ class ModuleLoaderTest extends TestCase {
         assert_true(is_array($modules));
         assert_true(count($modules) > 0);
         
-        // Should have at least users, articles, and comments
-        assert_array_key_exists('users', $modules);
+        // Should have at least core, articles, and comments
+        assert_array_key_exists('core', $modules);
         assert_array_key_exists('articles', $modules);
         assert_array_key_exists('comments', $modules);
     }
 
     public function test_get_module() {
-        $usersModule = ModuleLoader::getModule('users');
+        $coreModule = ModuleLoader::getModule('core');
         
-        assert_true(is_array($usersModule));
-        assert_array_key_exists('name', $usersModule);
-        assert_array_key_exists('metadata', $usersModule);
-        assert_equal('users', $usersModule['name']);
+        assert_true(is_array($coreModule));
+        assert_array_key_exists('name', $coreModule);
+        assert_array_key_exists('metadata', $coreModule);
+        assert_equal('core', $coreModule['name']);
     }
 
-    public function test_users_module_is_core() {
-        $usersModule = ModuleLoader::getModule('users');
-        $metadata = $usersModule['metadata'];
+    public function test_core_module_is_core() {
+        $coreModule = ModuleLoader::getModule('core');
+        $metadata = $coreModule['metadata'];
         
         assert_array_key_exists('isCore', $metadata);
         assert_true($metadata['isCore']);
@@ -50,7 +50,7 @@ class ModuleLoaderTest extends TestCase {
         
         assert_array_key_exists('dependencies', $metadata);
         assert_true(count($metadata['dependencies']) > 0);
-        assert_contains(json_encode($metadata['dependencies']), 'users');
+        assert_contains(json_encode($metadata['dependencies']), 'core');
         assert_contains(json_encode($metadata['dependencies']), 'articles');
     }
 
@@ -58,14 +58,14 @@ class ModuleLoaderTest extends TestCase {
         $pricing = ModuleLoader::getModulePricing();
         
         assert_true(is_array($pricing));
-        assert_array_key_exists('users', $pricing);
+        assert_array_key_exists('core', $pricing);
         assert_array_key_exists('articles', $pricing);
         assert_array_key_exists('comments', $pricing);
         
         // Check structure
-        assert_array_key_exists('price', $pricing['users']);
-        assert_array_key_exists('currency', $pricing['users']);
-        assert_array_key_exists('isCore', $pricing['users']);
+        assert_array_key_exists('price', $pricing['core']);
+        assert_array_key_exists('currency', $pricing['core']);
+        assert_array_key_exists('isCore', $pricing['core']);
     }
 
     public function test_calculate_module_cost_single() {
@@ -91,11 +91,11 @@ class ModuleLoaderTest extends TestCase {
     }
 
     public function test_calculate_module_cost_with_core_module() {
-        $cost = ModuleLoader::calculateModuleCost(['users', 'articles']);
+        $cost = ModuleLoader::calculateModuleCost(['core', 'articles']);
         
-        // Users is core (free), so only articles price should count
+        // Core is free, so only articles price should count
         $breakdown = $cost['breakdown'];
-        assert_equal(0, $breakdown['users']['price']);
+        assert_equal(0, $breakdown['core']['price']);
         assert_true($breakdown['articles']['price'] > 0);
         
         // Total should equal only paid modules
@@ -106,7 +106,7 @@ class ModuleLoaderTest extends TestCase {
         $coreModules = ModuleLoader::getCoreModules();
         
         assert_true(is_array($coreModules));
-        assert_array_key_exists('users', $coreModules);
+        assert_array_key_exists('core', $coreModules);
         
         // Comments and Articles should not be core
         assert_false(isset($coreModules['comments']));
@@ -120,20 +120,20 @@ class ModuleLoaderTest extends TestCase {
         assert_array_key_exists('articles', $paidModules);
         assert_array_key_exists('comments', $paidModules);
         
-        // Users should not be in paid modules
-        assert_false(isset($paidModules['users']));
+        // Core should not be in paid modules
+        assert_false(isset($paidModules['core']));
     }
 
     public function test_get_module_dependencies() {
         $deps = ModuleLoader::getDependencies('comments');
         
         assert_true(is_array($deps));
-        assert_true(in_array('users', $deps));
+        assert_true(in_array('core', $deps));
         assert_true(in_array('articles', $deps));
     }
 
     public function test_validate_dependencies_success() {
-        // Comments depends on users and articles which exist
+        // Comments depends on core and articles which exist
         $missing = ModuleLoader::validateDependencies('comments');
         
         assert_true(is_array($missing));

@@ -10,6 +10,7 @@ class UserModuleRepository
 {
     private Database $db;
     private string $table = 'user_modules';
+    private string $purchaseTable = 'user_module_purchases';
 
     public function __construct()
     {
@@ -22,9 +23,13 @@ class UserModuleRepository
      */
     public function getUserModules(int $userId): array
     {
-        $sql = "SELECT module_name, permission_level 
-                FROM {$this->table} 
-                WHERE user_id = :user_id AND enabled = 1";
+                $sql = "SELECT um.module_name, um.permission_level
+                                FROM {$this->table} um
+                                JOIN {$this->purchaseTable} p
+                                    ON p.user_id = um.user_id AND p.module_name = um.module_name
+                                WHERE um.user_id = :user_id
+                                    AND um.enabled = 1
+                                    AND p.status = 'active'";
 
         $results = $this->db->fetchAll($sql, ['user_id' => $userId]);
         
@@ -41,12 +46,15 @@ class UserModuleRepository
      */
     public function getModulePermission(int $userId, string $moduleName): int
     {
-        $sql = "SELECT permission_level 
-                FROM {$this->table} 
-                WHERE user_id = :user_id 
-                AND module_name = :module_name 
-                AND enabled = 1
-                LIMIT 1";
+                $sql = "SELECT um.permission_level
+                                FROM {$this->table} um
+                                JOIN {$this->purchaseTable} p
+                                    ON p.user_id = um.user_id AND p.module_name = um.module_name
+                                WHERE um.user_id = :user_id
+                                    AND um.module_name = :module_name
+                                    AND um.enabled = 1
+                                    AND p.status = 'active'
+                                LIMIT 1";
 
         $result = $this->db->fetch($sql, [
             'user_id' => $userId,

@@ -4,7 +4,12 @@ namespace Tests\Integration;
 
 class AdminUiTest
 {
-    private string $baseUrl = 'http://localhost';
+    private string $baseUrl;
+
+    public function __construct(?string $baseUrl = null)
+    {
+        $this->baseUrl = $baseUrl ?? getenv('ADMIN_UI_BASE_URL') ?: 'http://localhost';
+    }
 
     private function requestRaw(string $method, string $path, array $data = [], ?string $cookieFile = null): array
     {
@@ -64,6 +69,22 @@ class AdminUiTest
         return '';
     }
 
+    private function loginAndGetCookieFile(): string
+    {
+        $cookieFile = sys_get_temp_dir() . '/tera_admin_cookie_' . uniqid() . '.txt';
+
+        $response = $this->requestRaw('POST', '/admin/login', [
+            'username' => 'admin',
+            'password' => 'admin'
+        ], $cookieFile);
+
+        $location = $this->getHeaderValue($response['headers'], 'Location');
+        $this->assertTrue($response['status'] === 302, 'Should redirect after login');
+        $this->assertContains('/admin/dashboard', $location, 'Should redirect to dashboard');
+
+        return $cookieFile;
+    }
+
     public function test_admin_requires_login(): void
     {
         echo "\n✓ TEST: Admin Requires Login\n";
@@ -83,21 +104,52 @@ class AdminUiTest
         ]);
 
         $this->assertTrue($response['status'] === 200, 'Should return login page');
-        $this->assertContains('Lathos', $response['body'], 'Should show error message');
+        $this->assertContains('login-error', $response['body'], 'Should show error message');
     }
 
     public function test_admin_login_success(): void
     {
         echo "\n✓ TEST: Admin Login Success\n";
-        $cookieFile = sys_get_temp_dir() . '/tera_admin_cookie.txt';
+        $this->loginAndGetCookieFile();
+    }
 
-        $response = $this->requestRaw('POST', '/admin/login', [
-            'username' => 'admin',
-            'password' => 'admin'
-        ], $cookieFile);
-
+    public function test_admin_modules_requires_login(): void
+    {
+        echo "\n✓ TEST: Admin Modules Requires Login\n";
+        $response = $this->requestRaw('GET', '/admin/modules');
         $location = $this->getHeaderValue($response['headers'], 'Location');
-        $this->assertTrue($response['status'] === 302, 'Should redirect after login');
-        $this->assertContains('/admin/dashboard', $location, 'Should redirect to dashboard');
+
+        $this->assertTrue($response['status'] === 302, 'Should redirect to login');
+        $this->assertContains('/admin/login', $location, 'Should redirect to /admin/login');
+    }
+
+    public function test_admin_permissions_requires_login(): void
+    {
+        echo "\n✓ TEST: Admin Permissions Requires Login\n";
+        $response = $this->requestRaw('GET', '/admin/permissions');
+        $location = $this->getHeaderValue($response['headers'], 'Location');
+
+        $this->assertTrue($response['status'] === 302, 'Should redirect to login');
+        $this->assertContains('/admin/login', $location, 'Should redirect to /admin/login');
+    }
+
+    public function test_admin_modules_page_loads(): void
+    {
+        echo "\n✓ TEST: Admin Modules Page Loads\n";
+        $cookieFile = $this->loginAndGetCookieFile();
+        $response = $this->requestRaw('GET', '/admin/modules', [], $cookieFile);
+
+        $this->assertTrue($response['status'] === 200, 'Modules page should load');
+        $this->assertContains('Modules', $response['body'], 'Modules page should render');
+    }
+
+    public function test_admin_permissions_page_loads(): void
+    {
+        echo "\n✓ TEST: Admin Permissions Page Loads\n";
+        $cookieFile = $this->loginAndGetCookieFile();
+        $response = $this->requestRaw('GET', '/admin/permissions', [], $cookieFile);
+
+        $this->assertTrue($response['status'] === 200, 'Permissions page should load');
+        $this->assertContains('Permissions', $response['body'], 'Permissions page should render');
     }
 }

@@ -24,7 +24,8 @@ class ModuleAccessMiddleware
             return [
                 'success' => false,
                 'error' => 'Authentication required',
-                'code' => 401
+                'code' => 401,
+                'error_code' => ErrorCodes::AUTH_REQUIRED,
             ];
         }
 
@@ -33,7 +34,8 @@ class ModuleAccessMiddleware
             return [
                 'success' => false,
                 'error' => 'No module permissions found',
-                'code' => 403
+                'code' => 403,
+                'error_code' => ErrorCodes::MODULE_PERMISSIONS_MISSING,
             ];
         }
 
@@ -44,7 +46,8 @@ class ModuleAccessMiddleware
             return [
                 'success' => false,
                 'error' => "No access to module: {$moduleName}",
-                'code' => 403
+                'code' => 403,
+                'error_code' => ErrorCodes::MODULE_NO_ACCESS,
             ];
         }
 
@@ -56,7 +59,8 @@ class ModuleAccessMiddleware
             return [
                 'success' => false,
                 'error' => "Insufficient permissions for module: {$moduleName}. Required: {$permissionName}",
-                'code' => 403
+                'code' => 403,
+                'error_code' => ErrorCodes::MODULE_INSUFFICIENT,
             ];
         }
 

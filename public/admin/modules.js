@@ -3,34 +3,36 @@
  */
 
 const API_BASE = '/api';
-let token = localStorage.getItem('authToken');
 let allModules = [];
 let selectedUserId = null;
+let allUsers = [];
+let userPurchases = {};
+let selectedUserLabel = '-';
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    checkAuth();
     loadModules();
     loadUsers();
     setupEventListeners();
 });
 
 function setupEventListeners() {
-    document.getElementById('logoutBtn').addEventListener('click', logout);
-    document.getElementById('userSelect').addEventListener('change', onUserSelect);
-    document.getElementById('saveModulesBtn').addEventListener('click', saveUserModules);
-}
-
-function checkAuth() {
-    if (!token) {
-        window.location.href = '/admin/login';
-        return;
+    const logoutButton = document.getElementById('logout-button');
+    if (logoutButton) {
+        logoutButton.addEventListener('click', () => {
+            window.location.href = '/admin/logout';
+        });
     }
-}
 
-function logout() {
-    localStorage.removeItem('authToken');
-    window.location.href = '/admin/login';
+    const userSearch = document.getElementById('userSearch');
+    if (userSearch) {
+        userSearch.addEventListener('input', onUserSearch);
+    }
+
+    const saveButton = document.getElementById('saveModulesBtn');
+    if (saveButton) {
+        saveButton.addEventListener('click', saveUserModules);
+    }
 }
 
 // Load all available modules
@@ -38,7 +40,6 @@ async function loadModules() {
     try {
         const response = await fetch(`${API_BASE}/modules`, {
             headers: {
-                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -57,6 +58,9 @@ async function loadModules() {
 
 function displayModules(modules) {
     const grid = document.getElementById('modulesGrid');
+    if (!grid) {
+        return;
+    }
     grid.innerHTML = modules.map(module => `
         <div class="module-card ${module.isCore ? 'core' : 'paid'}">
             <div class="module-header">
@@ -66,7 +70,7 @@ function displayModules(modules) {
             <p class="module-description">${module.description}</p>
             <div class="module-info">
                 <span class="module-entities">📊 ${module.entities} entities</span>
-                ${module.dependencies.length > 0 ? `
+                ${Array.isArray(module.dependencies) && module.dependencies.length > 0 ? `
                     <span class="module-deps">🔗 Depends on: ${module.dependencies.join(', ')}</span>
                 ` : ''}
             </div>
@@ -95,7 +99,6 @@ async function loadUsers() {
     try {
         const response = await fetch(`${API_BASE}/users`, {
             headers: {
-                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -103,36 +106,91 @@ async function loadUsers() {
         if (!response.ok) throw new Error('Failed to load users');
 
         const result = await response.json();
-        const users = result.data || [];
-
-        const select = document.getElementById('userSelect');
-        select.innerHTML = '<option value="">-- Select User --</option>' +
-            users.map(user => `
-                <option value="${user.id}">${user.username} (${user.email})</option>
-            `).join('');
+        allUsers = result.data || [];
+        renderUserOptions(allUsers);
     } catch (error) {
         console.error('Error loading users:', error);
     }
 }
 
-// When user is selected
-async function onUserSelect(event) {
-    selectedUserId = event.target.value;
-    
-    if (!selectedUserId) {
-        document.getElementById('userModulesContainer').style.display = 'none';
+function renderUserOptions(users) {
+    const list = document.getElementById('userList');
+    if (!list) {
         return;
     }
 
-    loadUserModules(selectedUserId);
+    if (users.length === 0) {
+        list.innerHTML = '<div class="user-list-empty">Δεν βρέθηκαν χρήστες</div>';
+        return;
+    }
+
+    const items = users.map(user => {
+        const label = `${user.username} (${user.email})`;
+        const selectedClass = String(user.id) === String(selectedUserId) ? ' is-selected' : '';
+        return `
+            <button type="button" class="user-list-item${selectedClass}" data-user-id="${user.id}" data-label="${label}">
+                <span class="user-name">${user.username}</span>
+                <span class="user-email">${user.email}</span>
+            </button>
+        `;
+    });
+
+    list.innerHTML = items.join('');
+
+    list.querySelectorAll('.user-list-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const userId = item.getAttribute('data-user-id');
+            const label = item.getAttribute('data-label') || '-';
+            setSelectedUser(userId, label);
+        });
+    });
+}
+
+function onUserSearch(event) {
+    const term = event.target.value.trim().toLowerCase();
+    if (!term) {
+        renderUserOptions(allUsers);
+        return;
+    }
+
+    const filtered = allUsers.filter(user => {
+        const username = (user.username || '').toLowerCase();
+        const email = (user.email || '').toLowerCase();
+        const first = (user.first_name || '').toLowerCase();
+        const last = (user.last_name || '').toLowerCase();
+
+        return (
+            username.includes(term) ||
+            email.includes(term) ||
+            first.includes(term) ||
+            last.includes(term)
+        );
+    });
+
+    renderUserOptions(filtered);
+}
+
+function setSelectedUser(userId, label) {
+    selectedUserId = userId;
+    selectedUserLabel = label || '-';
+
+    if (!selectedUserId) {
+        const container = document.getElementById('userModulesContainer');
+        if (container) {
+            container.style.display = 'none';
+        }
+        return;
+    }
+
+    loadUserModules(selectedUserId, selectedUserLabel);
+    renderUserOptions(allUsers);
 }
 
 // Load user's assigned modules
-async function loadUserModules(userId) {
+async function loadUserModules(userId, label) {
     try {
         const response = await fetch(`${API_BASE}/users/${userId}/modules`, {
             headers: {
-                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             }
         });
@@ -141,23 +199,33 @@ async function loadUserModules(userId) {
 
         const result = await response.json();
         const userModules = result.data.modules || [];
+        userPurchases = result.data.purchases || {};
         const billing = result.data.billing;
 
-        const username = document.getElementById('userSelect').selectedOptions[0].text;
-        document.getElementById('selectedUsername').textContent = username;
+        const selectedName = label || selectedUserLabel || '-';
+        const selectedNode = document.getElementById('selectedUsername');
+        if (selectedNode) {
+            selectedNode.textContent = selectedName;
+        }
 
-        displayUserModules(userModules);
+        displayUserModules(userModules, userPurchases);
         updateBillingInfo(billing);
 
-        document.getElementById('userModulesContainer').style.display = 'block';
+        const container = document.getElementById('userModulesContainer');
+        if (container) {
+            container.style.display = 'block';
+        }
     } catch (error) {
         console.error('Error loading user modules:', error);
         showError('Failed to load user modules');
     }
 }
 
-function displayUserModules(userModules) {
+function displayUserModules(userModules, purchases) {
     const container = document.getElementById('userModulesList');
+    if (!container) {
+        return;
+    }
     
     // Create map of user's modules for easier lookup
     const userModuleMap = {};
@@ -167,8 +235,12 @@ function displayUserModules(userModules) {
 
     // Display all available modules with checkboxes
     container.innerHTML = allModules.map(module => {
-        const hasAccess = userModuleMap.hasOwnProperty(module.name);
-        const permission = userModuleMap[module.name] || 0;
+        const isCore = module.isCore === true;
+        const hasAccess = isCore || Object.prototype.hasOwnProperty.call(userModuleMap, module.name);
+        const permission = userModuleMap[module.name] ?? (isCore ? 15 : 0);
+        const purchase = purchases[module.name] || null;
+        const purchaseStatus = purchase?.status || 'none';
+        const purchased = purchaseStatus === 'active';
 
         return `
             <div class="user-module-item">
@@ -177,16 +249,17 @@ function displayUserModules(userModules) {
                            id="module_${module.name}" 
                            value="${module.name}"
                            ${hasAccess ? 'checked' : ''}
-                           ${module.isCore ? 'checked disabled' : ''}>
+                           ${isCore ? 'checked disabled' : ''}>
                     <label for="module_${module.name}">
                         <strong>${module.name}</strong>
-                        ${module.isCore ? '<span class="badge-core">Core</span>' : ''}
-                        ${!module.isCore && module.price > 0 ? `<span class="badge-price">€${module.price}/mo</span>` : ''}
+                        ${isCore ? '<span class="badge-core">Core</span>' : ''}
+                        ${!isCore && module.price > 0 ? `<span class="badge-price">€${module.price}/mo</span>` : ''}
+                        ${!isCore ? (purchased ? '<span class="badge-purchased">Purchased</span>' : '<span class="badge-available">Available</span>') : ''}
                     </label>
                 </div>
                 <div class="permission-select">
                     <label>Permission:</label>
-                    <select class="permission-dropdown" data-module="${module.name}" ${!hasAccess && !modulecore ? 'disabled' : ''}>
+                    <select class="permission-dropdown" data-module="${module.name}" ${(!hasAccess || isCore) ? 'disabled' : ''}>
                         <option value="0" ${permission === 0 ? 'selected' : ''}>None</option>
                         <option value="1" ${permission === 1 ? 'selected' : ''}>Read Only</option>
                         <option value="7" ${permission === 7 ? 'selected' : ''}>Read/Write</option>
@@ -213,9 +286,17 @@ function displayUserModules(userModules) {
 }
 
 function updateBillingInfo(billing) {
-    document.getElementById('monthlyTotal').textContent = `€${billing.total.toFixed(2)}`;
-    document.getElementById('activeModulesCount').textContent = billing.count;
-    document.getElementById('paidModulesCount').textContent = billing.paidModules;
+    const total = billing?.total ?? 0;
+    const count = billing?.count ?? 0;
+    const paid = billing?.paidModules ?? 0;
+
+    const totalNode = document.getElementById('monthlyTotal');
+    const countNode = document.getElementById('activeModulesCount');
+    const paidNode = document.getElementById('paidModulesCount');
+
+    if (totalNode) totalNode.textContent = `€${Number(total).toFixed(2)}`;
+    if (countNode) countNode.textContent = count;
+    if (paidNode) paidNode.textContent = paid;
 }
 
 // Save user modules
@@ -226,7 +307,7 @@ async function saveUserModules() {
     const modules = {};
 
     // Collect enabled modules and their permissions
-    container.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
+    container.querySelectorAll('input[type="checkbox"]:checked:not(:disabled)').forEach(checkbox => {
         const moduleName = checkbox.value;
         const permissionSelect = container.querySelector(`select[data-module="${moduleName}"]`);
         const permission = parseInt(permissionSelect.value);
@@ -240,7 +321,6 @@ async function saveUserModules() {
         const response = await fetch(`${API_BASE}/users/${selectedUserId}/modules`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ modules })
@@ -260,10 +340,17 @@ async function saveUserModules() {
 }
 
 function showSuccess(message) {
-    // Simple alert for now - you can enhance this with a toast notification
+    if (typeof window.showAdminModal === 'function') {
+        window.showAdminModal(message, 'success');
+        return;
+    }
     alert('✓ ' + message);
 }
 
 function showError(message) {
+    if (typeof window.showAdminModal === 'function') {
+        window.showAdminModal(message, 'error');
+        return;
+    }
     alert('✗ ' + message);
 }

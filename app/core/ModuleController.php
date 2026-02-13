@@ -9,10 +9,12 @@ namespace App\Core;
 class ModuleController
 {
     private UserModuleRepository $userModuleRepo;
+    private UserModulePurchaseRepository $purchaseRepo;
 
     public function __construct()
     {
         $this->userModuleRepo = new UserModuleRepository();
+        $this->purchaseRepo = new UserModulePurchaseRepository();
     }
 
     /**
@@ -73,10 +75,13 @@ class ModuleController
     {
         $userModules = $this->userModuleRepo->getUserModules($userId);
         $cost = ModuleLoader::calculateModuleCost(array_keys($userModules));
+        $purchases = $this->purchaseRepo->getUserPurchases($userId);
 
         $modules = [];
         foreach ($userModules as $moduleName => $permission) {
             $moduleInfo = ModuleLoader::getModule($moduleName);
+            $purchase = $purchases[$moduleName] ?? null;
+            $purchaseStatus = $purchase['status'] ?? 'none';
             $modules[] = [
                 'name' => $moduleName,
                 'permission' => $permission,
@@ -87,6 +92,8 @@ class ModuleController
                 'canDelete' => ModulePermission::canDelete($permission),
                 'price' => $moduleInfo['metadata']['price'] ?? 0,
                 'isCore' => $moduleInfo['metadata']['isCore'] ?? false,
+                'purchased' => $purchaseStatus === 'active',
+                'purchaseStatus' => $purchaseStatus,
             ];
         }
 
@@ -95,6 +102,7 @@ class ModuleController
             'data' => [
                 'userId' => $userId,
                 'modules' => $modules,
+                'purchases' => $purchases,
                 'billing' => $cost,
             ]
         ];
@@ -113,6 +121,8 @@ class ModuleController
 
         // Validate module names
         $availableModules = ModuleLoader::getModules();
+        $desiredModules = [];
+
         foreach ($data['modules'] as $moduleName => $permission) {
             if (!isset($availableModules[$moduleName])) {
                 return ['success' => false, 'error' => "Invalid module: {$moduleName}"];
@@ -121,10 +131,38 @@ class ModuleController
             if (!is_numeric($permission) || $permission < 0 || $permission > 15) {
                 return ['success' => false, 'error' => "Invalid permission for {$moduleName}"];
             }
+
+            if ((int)$permission > 0) {
+                $metadata = $availableModules[$moduleName]['metadata'] ?? [];
+                if (empty($metadata['isCore'])) {
+                    $desiredModules[] = $moduleName;
+                }
+            }
         }
 
         // Set modules
         $this->userModuleRepo->setUserModules($userId, $data['modules']);
+
+        // Sync purchases for non-core modules
+        $existingPurchases = $this->purchaseRepo->getUserPurchases($userId);
+        $activePurchases = array_filter($existingPurchases, fn($purchase) => ($purchase['status'] ?? '') === 'active');
+
+        foreach ($desiredModules as $moduleName) {
+            $metadata = $availableModules[$moduleName]['metadata'] ?? [];
+            $this->purchaseRepo->upsertPurchase(
+                $userId,
+                $moduleName,
+                (float)($metadata['price'] ?? 0),
+                $metadata['priceCurrency'] ?? 'EUR',
+                $metadata['billingPeriod'] ?? 'monthly'
+            );
+        }
+
+        foreach (array_keys($activePurchases) as $moduleName) {
+            if (!in_array($moduleName, $desiredModules, true)) {
+                $this->purchaseRepo->cancelPurchase($userId, $moduleName);
+            }
+        }
 
         // Calculate new cost
         $cost = ModuleLoader::calculateModuleCost(array_keys($data['modules']));
@@ -184,6 +222,11 @@ class ModuleController
     public function removeModuleAccess(int $userId, string $moduleName): array
     {
         $this->userModuleRepo->removeModuleAccess($userId, $moduleName);
+
+        $module = ModuleLoader::getModule($moduleName);
+        if (!empty($module) && empty($module['metadata']['isCore'])) {
+            $this->purchaseRepo->cancelPurchase($userId, $moduleName);
+        }
 
         return [
             'success' => true,
